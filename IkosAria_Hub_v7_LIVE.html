@@ -1,0 +1,3085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Ikos Aria — F&B Operations Hub v7</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
+:root{
+  /* ─── Palette ─── */
+  --bg:       #18202e;
+  --bg2:      #1f2d40;
+  --bg3:      #263348;
+  --bg4:      #2d3c54;
+  --surface:  #1a2638;
+  --card:     #1f2d40;
+
+  --gold:     #e2b04a;
+  --gold2:    #f0ca72;
+  --goldf:    rgba(226,176,74,0.12);
+  --goldb:    rgba(226,176,74,0.25);
+
+  --teal:     #2a8a9e;
+  --teal2:    #35a3ba;
+  --tealb:    rgba(42,138,158,0.2);
+
+  --text:     #e8e4d9;
+  --text2:    #b8c4d4;
+  --muted:    #7a90aa;
+  --border:   rgba(226,176,74,0.18);
+  --border2:  rgba(255,255,255,0.08);
+
+  /* Status palette — more vibrant */
+  --free-bg:#0d2e1a; --free-b:#22c55e; --free-t:#4ade80;
+  --res-bg:#0f1e3a;  --res-b:#3b82f6;  --res-t:#60a5fa;
+  --seat-bg:#300d10; --seat-b:#ef4444; --seat-t:#f87171;
+  --main-bg:#2d1a06; --main-b:#f97316; --main-t:#fb923c;
+  --dess-bg:#2a270a; --dess-b:#eab308; --dess-t:#fbbf24;
+  --cln-bg:#1a1e24;  --cln-b:#64748b;  --cln-t:#94a3b8;
+
+  /* Alert */
+  --alg-t:#fb923c; --alg-b:rgba(249,115,22,.3); --alg-bg:rgba(249,115,22,.07);
+  --att-t:#f87171; --att-b:rgba(239,68,68,.3);  --att-bg:rgba(239,68,68,.07);
+  --ann-t:#c084fc; --ann-b:rgba(168,85,247,.3);  --ann-bg:rgba(168,85,247,.07);
+  --bday-t:#60a5fa;--bday-b:rgba(59,130,246,.3); --bday-bg:rgba(59,130,246,.07);
+
+  --hf:'Playfair Display',serif;
+  --bf:'Inter',sans-serif;
+  --radius:8px;
+  --shadow:0 4px 20px rgba(0,0,0,.4);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg);color:var(--text);font-size:13px}
+
+/* ═══ NAV ═══ */
+.nav{
+  height:54px;background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 14px;gap:0;flex-shrink:0;
+  box-shadow:0 2px 12px rgba(0,0,0,.3)
+}
+.logo{font-family:var(--hf);font-size:18px;color:var(--gold);letter-spacing:.05em;
+  margin-right:18px;white-space:nowrap;flex-shrink:0}
+.logo sup{color:var(--teal2);font-size:10px;vertical-align:super;font-family:var(--bf);font-weight:600}
+.vtabs{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none;min-width:0}
+.vtabs::-webkit-scrollbar{display:none}
+.vtab{
+  padding:6px 12px;font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;
+  border-radius:6px 6px 0 0;border:1px solid transparent;border-bottom:none;
+  transition:all .15s;white-space:nowrap;letter-spacing:.03em;
+  position:relative;top:1px;flex-shrink:0
+}
+.vtab:hover{color:var(--text2);background:rgba(255,255,255,.04)}
+.vtab.active{
+  color:var(--gold);background:var(--bg);border-color:var(--border);
+  border-bottom-color:var(--bg)
+}
+.vtab.dineout{color:#a78bfa}
+.vtab.dineout.active{color:#c4b5fd;background:var(--bg);border-color:rgba(167,139,250,.3);border-bottom-color:var(--bg)}
+.vbadge{
+  display:inline-block;background:var(--teal);color:#fff;
+  font-size:8px;font-weight:700;padding:1px 4px;border-radius:8px;
+  margin-left:4px;vertical-align:middle;line-height:1.4
+}
+
+/* NAV RIGHT */
+.nav-r{display:flex;align-items:center;gap:6px;margin-left:auto;padding-left:10px;flex-shrink:0}
+
+.meal-pill{
+  display:flex;gap:2px;background:var(--bg3);
+  border:1px solid var(--border2);border-radius:10px;padding:3px
+}
+.mpill{
+  padding:4px 10px;font-size:10px;font-weight:600;color:var(--muted);
+  cursor:pointer;border-radius:7px;transition:all .15s;white-space:nowrap
+}
+.mpill:hover{color:var(--text2)}
+.mpill.active{background:var(--gold);color:#111;font-weight:700}
+.mpill.active.bk{background:#60a5fa;color:#0f172a}
+.mpill.active.ln{background:#fb923c;color:#1c0700}
+.mpill.active.dn{background:var(--gold);color:#1a1000}
+
+.navbtn{
+  display:flex;align-items:center;gap:5px;
+  background:var(--bg3);border:1px solid var(--border2);
+  color:var(--text2);padding:5px 11px;border-radius:7px;
+  font-size:11px;font-weight:500;cursor:pointer;
+  font-family:var(--bf);transition:all .15s;white-space:nowrap
+}
+.navbtn:hover{border-color:var(--goldb);color:var(--gold)}
+.navbtn.accent{border-color:var(--teal);color:var(--teal2)}
+.navbtn.accent:hover{background:var(--tealb);color:#fff}
+.navbtn.walkin{border-color:rgba(96,165,250,.4);color:#60a5fa}
+.navbtn.walkin:hover{background:rgba(59,130,246,.12)}
+.navbtn.search{border-color:rgba(167,139,250,.4);color:#a78bfa}
+.navbtn.search:hover{background:rgba(139,92,246,.1)}
+.ndate{font-size:11px;color:var(--muted);white-space:nowrap}
+
+/* ═══ ALERT STRIP ═══ */
+.astrip{
+  height:30px;background:linear-gradient(90deg,rgba(239,68,68,.08),rgba(249,115,22,.06),rgba(168,85,247,.06));
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  padding:0 14px;gap:16px;overflow-x:auto;flex-shrink:0
+}
+.astrip-item{display:flex;align-items:center;gap:5px;font-size:10px;white-space:nowrap}
+.astrip-dot{width:6px;height:6px;border-radius:50%}
+.astrip-label{color:var(--muted)} .astrip-label strong{color:var(--text2)}
+
+/* ═══ LAYOUT ═══ */
+.layout{display:flex;height:calc(100vh - 54px);overflow:hidden}
+/* strip off if exists */
+.layout.with-strip{height:calc(100vh - 84px)}
+
+/* ═══ LEFT PANEL ═══ */
+.lp{
+  width:240px;background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden
+}
+.ph{
+  padding:10px 12px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between
+}
+.pt{font-family:var(--hf);font-size:14px;color:var(--gold);font-weight:600;letter-spacing:.03em}
+.pbadge{background:var(--teal);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px}
+
+/* Stats grid */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.sc{background:var(--bg2);padding:7px 10px;text-align:center}
+.sn{font-size:18px;font-weight:700;font-family:var(--hf)}
+.sl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}
+.sn.g{color:var(--free-t)} .sn.b{color:var(--res-t)} .sn.r{color:var(--seat-t)} .sn.o{color:var(--main-t)}
+
+/* Reservation list */
+.rlist{flex:1;overflow-y:auto;padding:8px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.slot-head{
+  padding:5px 4px 3px;font-size:9px;font-weight:700;color:var(--gold);
+  text-transform:uppercase;letter-spacing:.08em;
+  display:flex;justify-content:space-between;margin-top:6px
+}
+.slot-pax{font-size:9px;color:var(--muted);font-weight:400}
+
+.rcard{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:7px;
+  padding:9px 10px;margin-bottom:5px;cursor:pointer;transition:all .15s;
+  position:relative;overflow:hidden
+}
+.rcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:2px 0 0 2px}
+.rcard.sf::before{background:var(--free-t)} .rcard.sr::before{background:var(--res-t)}
+.rcard.ss::before{background:var(--seat-t)} .rcard.sm::before{background:var(--main-t)}
+.rcard.sd::before{background:var(--dess-t)} .rcard.sc2::before{background:var(--cln-t)}
+.rcard:hover{border-color:var(--goldb);transform:translateX(2px)}
+.rcard.seating-target{border-color:var(--free-t)!important;animation:pulseGreen 1.2s infinite}
+@keyframes pulseGreen{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.4)}50%{box-shadow:0 0 0 6px rgba(74,222,128,0)}}
+.rt{font-size:11px;font-weight:600;color:var(--gold2);display:flex;justify-content:space-between;margin-bottom:2px}
+.rn{font-size:12px;font-weight:500;color:var(--text);margin:1px 0}
+.rm{font-size:10px;color:var(--muted);display:flex;gap:7px;flex-wrap:wrap;margin-top:2px}
+.rflags{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap}
+
+/* Flags */
+.flag{font-size:8px;padding:2px 5px;border-radius:6px;font-weight:600;letter-spacing:.03em}
+.flag.vip{background:var(--goldf);color:var(--gold2);border:1px solid var(--goldb)}
+.flag.allergy{background:var(--alg-bg);color:var(--alg-t);border:1px solid var(--alg-b)}
+.flag.anniversary{background:var(--ann-bg);color:var(--ann-t);border:1px solid var(--ann-b)}
+.flag.birthday{background:var(--bday-bg);color:var(--bday-t);border:1px solid var(--bday-b)}
+.flag.returning{background:rgba(42,138,158,.1);color:var(--teal2);border:1px solid rgba(42,138,158,.3)}
+.flag.highchair{background:rgba(251,191,36,.1);color:#fbbf24;border:1px solid rgba(251,191,36,.3)}
+.flag.attention{background:var(--att-bg);color:var(--att-t);border:1px solid var(--att-b)}
+.flag.complainer{background:rgba(185,28,28,.1);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+.flag.deluxe{background:var(--ann-bg);color:var(--ann-t);border:1px solid var(--ann-b)}
+.flag.overbooked{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.3)}
+
+/* Bottom actions */
+.pact{padding:9px;border-top:1px solid var(--border);display:flex;gap:5px}
+.pb{
+  flex:1;padding:7px;background:var(--bg3);border:1px solid var(--border2);
+  color:var(--text2);border-radius:6px;font-size:10px;cursor:pointer;
+  font-family:var(--bf);transition:all .15s;text-align:center;font-weight:500
+}
+.pb:hover{border-color:var(--goldb);color:var(--gold)}
+.pb.pri{background:var(--teal);border-color:var(--teal2);color:#fff;font-weight:600}
+.pb.pri:hover{background:var(--teal2)}
+
+/* ═══ FLOOR AREA ═══ */
+.fa{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.ftb{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:7px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap
+}
+.legend{display:flex;gap:6px;align-items:center}
+.li{display:flex;align-items:center;gap:3px;font-size:9px;color:var(--muted)}
+.ld{width:7px;height:7px;border-radius:50%}
+.tsep{width:1px;height:18px;background:var(--border2)}
+.tacts{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap}
+.tbt{
+  padding:4px 10px;background:var(--bg3);border:1px solid var(--border2);
+  color:var(--text2);border-radius:6px;font-size:10px;cursor:pointer;
+  font-family:var(--bf);font-weight:500;transition:all .15s;white-space:nowrap
+}
+.tbt:hover{border-color:var(--goldb);color:var(--gold)}
+.tbt.act{background:var(--gold);color:#111;border-color:var(--gold);font-weight:700}
+.tbt.danger{border-color:rgba(239,68,68,.3);color:#f87171}
+.tbt.danger:hover{background:rgba(239,68,68,.1)}
+
+/* Seating mode banner */
+.seat-mode-banner{
+  background:linear-gradient(90deg,rgba(74,222,128,.15),rgba(34,197,94,.08));
+  border-bottom:2px solid var(--free-b);padding:7px 14px;
+  display:none;align-items:center;gap:10px;flex-shrink:0;
+  font-size:11px;font-weight:500;color:var(--free-t)
+}
+.seat-mode-banner.on{display:flex}
+.seat-mode-banner button{
+  margin-left:auto;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);
+  color:#f87171;padding:3px 10px;border-radius:6px;font-size:10px;cursor:pointer;font-family:var(--bf)
+}
+
+.fc{flex:1;overflow:auto;background:#0d1520;position:relative}
+.fmap{position:relative;width:100%;height:100%;min-height:500px}
+
+/* Sections */
+.zone{position:absolute;border-radius:4px;pointer-events:none}
+.zone-lbl{position:absolute;font-size:9px;color:rgba(255,255,255,.25);
+  text-transform:uppercase;letter-spacing:.08em;font-weight:600;padding:4px 7px}
+
+/* Tables */
+.te{
+  position:absolute;transform:translate(-50%,-50%);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  font-size:10px;font-weight:700;border:1.5px solid;user-select:none;
+  transition:all .18s;z-index:10;letter-spacing:.02em;border-radius:4px
+}
+.te.tc{border-radius:50%}
+.te:hover{z-index:20;filter:brightness(1.3);transform:translate(-50%,-50%) scale(1.1)}
+.te.sel{z-index:25;box-shadow:0 0 0 3px var(--gold),0 0 16px rgba(226,176,74,.4);
+  transform:translate(-50%,-50%) scale(1.12)}
+.te.msel{z-index:25;animation:pgold 1s infinite}
+.te.seat-pick{cursor:crosshair;animation:seatPulse 1s infinite}
+@keyframes pgold{0%,100%{box-shadow:0 0 0 2px var(--gold)}50%{box-shadow:0 0 0 6px rgba(226,176,74,.2)}}
+@keyframes seatPulse{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.5)}50%{box-shadow:0 0 0 6px rgba(74,222,128,.1)}}
+.te.sf{background:var(--free-bg);border-color:var(--free-b);color:var(--free-t)}
+.te.sr{background:var(--res-bg);border-color:var(--res-b);color:var(--res-t)}
+.te.ss{background:var(--seat-bg);border-color:var(--seat-b);color:var(--seat-t)}
+.te.sm{background:var(--main-bg);border-color:var(--main-b);color:var(--main-t)}
+.te.sd{background:var(--dess-bg);border-color:var(--dess-b);color:var(--dess-t)}
+.te.sc2{background:var(--cln-bg);border-color:var(--cln-b);color:var(--cln-t);opacity:.75}
+.tmr{position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  font-size:7px;background:rgba(0,0,0,.85);color:var(--gold2);
+  padding:1px 4px;border-radius:3px;white-space:nowrap;font-weight:500}
+.tname{font-size:7px;position:absolute;bottom:-13px;left:50%;transform:translateX(-50%);
+  white-space:nowrap;background:rgba(0,0,0,.8);padding:1px 3px;border-radius:2px;
+  color:var(--res-t);max-width:60px;overflow:hidden;text-overflow:ellipsis}
+.tflag-dot{position:absolute;top:-2px;right:-2px;width:7px;height:7px;border-radius:50%;border:1px solid var(--bg)}
+
+/* ═══ RIGHT PANEL ═══ */
+.rp{
+  width:230px;background:var(--bg2);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;transition:width .2s
+}
+.rp.col{width:0;overflow:hidden}
+.gc{flex:1;overflow-y:auto;padding:12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.gcn{font-family:var(--hf);font-size:16px;font-weight:600;color:var(--text);margin-bottom:2px}
+.gcr{font-size:10px;color:var(--gold2);margin-bottom:8px;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.gcs{margin-bottom:10px}
+.gcst{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  margin-bottom:4px;border-bottom:1px solid var(--border);padding-bottom:3px}
+.gcrow{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;color:var(--muted)}
+.gcrow span:last-child{color:var(--text2);font-weight:500}
+.gcal{background:var(--alg-bg);border:1px solid var(--alg-b);border-radius:6px;
+  padding:6px 8px;font-size:11px;color:var(--alg-t);margin-bottom:6px}
+.gcatt{background:var(--att-bg);border:1px solid var(--att-b);border-radius:6px;
+  padding:6px 8px;font-size:11px;color:var(--att-t);margin-bottom:6px}
+.gcspecial{background:var(--ann-bg);border:1px solid var(--ann-b);border-radius:6px;
+  padding:6px 8px;font-size:11px;color:var(--ann-t);margin-bottom:6px}
+.gcno{background:var(--goldf);border:1px solid var(--goldb);border-radius:6px;
+  padding:6px 8px;font-size:11px;color:var(--gold2);font-style:italic;margin-bottom:6px}
+
+/* Status buttons */
+.sacts{padding:9px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.sbtn{
+  padding:7px 4px;border-radius:6px;border:1px solid;font-size:9px;font-weight:600;
+  cursor:pointer;text-align:center;font-family:var(--bf);transition:all .15s;
+  letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:3px
+}
+.sbtn:hover{filter:brightness(1.2);transform:scale(1.03)}
+.sbtn.sf{background:var(--free-bg);border-color:var(--free-b);color:var(--free-t)}
+.sbtn.sr{background:var(--res-bg);border-color:var(--res-b);color:var(--res-t)}
+.sbtn.ss{background:var(--seat-bg);border-color:var(--seat-b);color:var(--seat-t)}
+.sbtn.sm{background:var(--main-bg);border-color:var(--main-b);color:var(--main-t)}
+.sbtn.sd{background:var(--dess-bg);border-color:var(--dess-b);color:var(--dess-t)}
+.sbtn.sc2{background:var(--cln-bg);border-color:var(--cln-b);color:var(--cln-t)}
+.sbtn.mrg{background:var(--goldf);border-color:var(--goldb);color:var(--gold2);grid-column:span 2}
+
+/* Seat-now button inside panel */
+.seat-now-btn{
+  margin:8px 12px;padding:9px;
+  background:linear-gradient(135deg,#166534,#15803d);
+  border:1px solid #22c55e;color:#4ade80;border-radius:7px;
+  font-size:11px;font-weight:600;cursor:pointer;font-family:var(--bf);
+  text-align:center;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px
+}
+.seat-now-btn:hover{background:linear-gradient(135deg,#15803d,#16a34a);color:#86efac}
+.seat-now-btn.cancel{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#f87171}
+
+/* ═══ MERGE BANNER ═══ */
+.mbanner{
+  position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+  background:var(--gold);color:#111;padding:9px 20px;border-radius:20px;
+  font-size:12px;font-weight:700;display:none;align-items:center;gap:10px;
+  z-index:200;box-shadow:var(--shadow)
+}
+.mbanner.on{display:flex}
+.mbanner button{background:#111;color:var(--gold);border:none;
+  padding:3px 11px;border-radius:10px;font-size:11px;cursor:pointer;font-weight:700}
+
+/* ═══ CONTEXT MENU ═══ */
+.ctx{position:fixed;background:var(--bg2);border:1px solid var(--border);
+  border-radius:9px;padding:5px;z-index:500;min-width:160px;
+  box-shadow:0 10px 30px rgba(0,0,0,.6);display:none}
+.ctx.on{display:block}
+.ci{padding:7px 12px;font-size:12px;color:var(--text2);border-radius:6px;cursor:pointer;
+  display:flex;align-items:center;gap:8px;font-family:var(--bf);transition:background .1s}
+.ci:hover{background:var(--bg3);color:var(--text)}
+.ci.danger{color:#f87171}
+.csep{height:1px;background:var(--border2);margin:4px 0}
+.ch{padding:4px 12px 6px;font-size:9px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+
+/* ═══ MODALS ═══ */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;
+  align-items:center;justify-content:center;z-index:600;backdrop-filter:blur(4px)}
+.mo.on{display:flex}
+.md{
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:22px;width:360px;max-height:88vh;overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.6)
+}
+.md.wide{width:540px}
+.md.xl{width:620px}
+.mt{
+  font-family:var(--hf);font-size:17px;color:var(--gold);margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between
+}
+.mt-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px}
+.mt-close:hover{color:var(--text)}
+.fg{margin-bottom:12px}
+.fl{font-size:10px;color:var(--muted);margin-bottom:4px;display:block;
+  text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+.fi{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);
+  padding:8px 10px;border-radius:7px;font-size:12px;font-family:var(--bf);outline:none;
+  transition:border .15s
+}
+.fi:focus{border-color:var(--goldb)}
+.fi.big{font-size:20px;font-weight:600;text-align:center;padding:14px;letter-spacing:.05em}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ckg{display:flex;flex-wrap:wrap;gap:5px}
+.cki{
+  display:flex;align-items:center;gap:4px;background:var(--bg3);
+  border:1px solid var(--border2);border-radius:6px;padding:4px 8px;
+  font-size:11px;cursor:pointer;color:var(--text2);transition:all .1s
+}
+.cki.ck{border-color:var(--goldb);color:var(--gold);background:var(--goldf)}
+.ma{display:flex;gap:8px;margin-top:16px}
+.mb{
+  flex:1;padding:9px;border-radius:7px;border:1px solid var(--border2);
+  font-size:12px;cursor:pointer;font-family:var(--bf);font-weight:500;transition:all .15s
+}
+.mb.pri{background:var(--teal);border-color:var(--teal2);color:#fff;font-weight:600}
+.mb.pri:hover{background:var(--teal2)}
+.mb.can{background:transparent;color:var(--muted)}
+.mb.can:hover{color:var(--text2)}
+.mb.green{background:#166534;border-color:#22c55e;color:#4ade80}
+.mb.green:hover{background:#15803d}
+
+/* ═══ SEARCH MODAL ═══ */
+.search-result{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:8px;
+  padding:12px 14px;margin-top:10px;display:none
+}
+.search-result.on{display:block}
+.sr-venue{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--goldf);border:1px solid var(--goldb);
+  color:var(--gold2);padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:8px
+}
+.sr-row{display:flex;justify-content:space-between;font-size:11px;
+  padding:3px 0;border-bottom:1px solid var(--border);color:var(--muted)}
+.sr-row:last-child{border-bottom:none}
+.sr-row span:last-child{color:var(--text2);font-weight:500}
+.alert-box{border-radius:8px;padding:8px 12px;margin-top:8px;font-size:11px;
+  display:flex;gap:8px;align-items:flex-start}
+.alert-box.allergy{background:var(--alg-bg);border:1px solid var(--alg-b);color:var(--alg-t)}
+.alert-box.attention{background:var(--att-bg);border:1px solid var(--att-b);color:var(--att-t)}
+.alert-box.special{background:var(--ann-bg);border:1px solid var(--ann-b);color:var(--ann-t)}
+
+/* ═══ WALK-IN MODAL ═══ */
+.walkin-result{display:none;margin-top:12px}
+.walkin-result.on{display:block}
+.walkin-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:10px
+}
+.wc-name{font-family:var(--hf);font-size:16px;color:var(--text);margin-bottom:4px}
+.wc-meta{font-size:10px;color:var(--muted);margin-bottom:8px;display:flex;gap:8px}
+
+/* ═══ IMPORT MODAL ═══ */
+.drop-zone{
+  border:2px dashed var(--border2);border-radius:8px;padding:18px;text-align:center;
+  cursor:pointer;transition:all .2s;margin-bottom:8px
+}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--goldb);background:var(--goldf)}
+.drop-zone.ok{border-color:var(--free-b);background:rgba(74,222,128,.04)}
+.dz-icon{font-size:22px;margin-bottom:6px}
+.dz-label{font-size:11px;color:var(--muted)} .dz-label strong{color:var(--text2)}
+.dz-status{font-size:10px;color:var(--free-t);margin-top:4px}
+.imp-sum{border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-top:10px}
+.imp-hd{background:var(--bg3);padding:6px 10px;font-size:9px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;
+  display:grid;grid-template-columns:1fr 50px 50px 55px}
+.imp-row{padding:5px 10px;font-size:11px;
+  display:grid;grid-template-columns:1fr 50px 50px 55px;
+  border-top:1px solid rgba(226,176,74,.07)}
+.imp-row:hover{background:var(--bg3)}
+.imp-row .vn{color:var(--gold2);font-weight:600}
+.imp-row .cv{text-align:center;color:var(--text2)}
+
+/* Template grid */
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px}
+.tpc{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:9px;cursor:pointer;transition:all .15s}
+.tpc:hover{border-color:var(--goldb)} .tpn{font-weight:600;color:var(--text2);margin-bottom:2px} .tpm{color:var(--muted);font-size:10px}
+
+/* ═══ TOAST ═══ */
+.toast{
+  position:fixed;bottom:18px;right:18px;background:var(--bg2);
+  border:1px solid var(--border);border-radius:8px;padding:10px 15px;
+  font-size:11px;color:var(--text2);z-index:800;
+  box-shadow:var(--shadow);transform:translateY(80px);opacity:0;transition:all .3s;
+  max-width:300px
+}
+.toast.on{transform:translateY(0);opacity:1}
+.toast.suc{border-left:3px solid var(--free-t)}
+.toast.wrn{border-left:3px solid var(--main-t)}
+.toast.err{border-left:3px solid var(--seat-t)}
+.toast.info{border-left:3px solid var(--teal2)}
+
+/* Dine Out list */
+.dout-list{padding:20px}
+.dout-card{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:8px;
+  padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px
+}
+.dout-room{font-size:22px;font-weight:700;font-family:var(--hf);color:var(--gold);min-width:60px}
+.dout-info{flex:1}
+.dout-name{font-size:13px;font-weight:600;color:var(--text)}
+.dout-meta{font-size:10px;color:var(--muted);margin-top:2px}
+.dout-flags{margin-top:4px;display:flex;gap:3px;flex-wrap:wrap}
+
+/* ═══ LAYOUT EDITOR ═══ */
+.tbt.edit-btn{border-color:rgba(167,139,250,.35);color:#a78bfa}
+.tbt.edit-btn:hover{background:rgba(139,92,246,.1);border-color:#a78bfa}
+.tbt.edit-btn.active{background:rgba(139,92,246,.2);border-color:#a78bfa;color:#c4b5fd}
+
+/* Editor toolbar */
+.edit-toolbar{
+  background:linear-gradient(90deg,#1a1030,#1e1a3a,#1a1030);
+  border-bottom:2px solid #7c3aed;
+  padding:7px 12px;display:flex;align-items:center;
+  justify-content:space-between;gap:8px;flex-shrink:0;flex-wrap:wrap
+}
+.edit-toolbar-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.edit-toolbar-right{display:flex;align-items:center;gap:6px}
+.edit-mode-badge{
+  font-size:10px;font-weight:700;color:#a78bfa;letter-spacing:.05em;
+  background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);
+  padding:3px 9px;border-radius:8px;white-space:nowrap
+}
+.edit-tool-group{display:flex;gap:3px;background:rgba(0,0,0,.2);border-radius:8px;padding:3px}
+.etb{
+  padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;
+  border-radius:6px;border:1px solid transparent;color:rgba(255,255,255,.6);
+  font-family:var(--bf);transition:all .15s;white-space:nowrap;background:transparent
+}
+.etb:hover{background:rgba(255,255,255,.08);color:#fff}
+.etb.active{background:rgba(167,139,250,.25);border-color:rgba(167,139,250,.5);color:#c4b5fd}
+.etb.green{background:#14532d;border-color:#22c55e;color:#4ade80}
+.etb.green:hover{background:#166534}
+.etb.orange{border-color:rgba(249,115,22,.4);color:#fb923c}
+.etb.orange:hover{background:rgba(249,115,22,.1)}
+.etb.red{border-color:rgba(239,68,68,.3);color:#f87171}
+.etb.red:hover:not([disabled]){background:rgba(239,68,68,.1)}
+.etb[disabled]{opacity:.35;cursor:not-allowed}
+.edit-sep{width:1px;height:20px;background:rgba(167,139,250,.2)}
+
+/* Grid overlay in edit mode */
+.fmap.editing{
+  background-image:
+    linear-gradient(rgba(167,139,250,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(167,139,250,.05) 1px,transparent 1px);
+  background-size:5% 5%
+}
+
+/* Table in edit mode: show grab cursor + selection */
+.fmap.editing .te{cursor:grab!important}
+.fmap.editing .te:active{cursor:grabbing!important}
+.fmap.editing .te.edit-sel{
+  box-shadow:0 0 0 2px #a78bfa,0 0 20px rgba(139,92,246,.4)!important;
+  transform:translate(-50%,-50%) scale(1.05)!important;
+  z-index:30!important
+}
+.fmap.editing .zone{pointer-events:all;cursor:grab}
+.fmap.editing .zone.edit-sel{outline:2px solid #a78bfa;outline-offset:-2px}
+
+/* Resize handles */
+.resize-handle{
+  position:absolute;width:10px;height:10px;background:#a78bfa;
+  border:2px solid #fff;border-radius:2px;z-index:50;
+  box-shadow:0 2px 6px rgba(0,0,0,.5)
+}
+.resize-handle.nw{top:-5px;left:-5px;cursor:nw-resize;transform:translate(-50%,-50%)}
+.resize-handle.n {top:-5px;left:50%;cursor:n-resize;transform:translate(-50%,-50%)}
+.resize-handle.ne{top:-5px;right:-5px;cursor:ne-resize;transform:translate(50%,-50%)}
+.resize-handle.e {top:50%;right:-5px;cursor:e-resize;transform:translate(50%,-50%)}
+.resize-handle.se{bottom:-5px;right:-5px;cursor:se-resize;transform:translate(50%,50%)}
+.resize-handle.s {bottom:-5px;left:50%;cursor:s-resize;transform:translate(-50%,50%)}
+.resize-handle.sw{bottom:-5px;left:-5px;cursor:sw-resize;transform:translate(-50%,50%)}
+.resize-handle.w {top:50%;left:-5px;cursor:w-resize;transform:translate(-50%,-50%)}
+
+/* Zone draw ghost */
+.zone-draw-ghost{
+  position:absolute;pointer-events:none;z-index:40;
+  border:2px dashed #a78bfa;background:rgba(139,92,246,.1);border-radius:4px
+}
+
+/* Add-table ghost cursor */
+.fmap.add-mode{cursor:crosshair!important}
+.fmap.add-mode .te{cursor:crosshair!important}
+
+/* Edit props panel */
+.shbtn{
+  flex:1;padding:6px;background:var(--bg3);border:1px solid var(--border2);
+  color:var(--text2);border-radius:6px;font-size:11px;cursor:pointer;
+  font-family:var(--bf);transition:all .15s
+}
+.shbtn.active{background:rgba(167,139,250,.15);border-color:rgba(167,139,250,.4);color:#c4b5fd}
+.col-swatch{
+  width:28px;height:24px;border-radius:5px;cursor:pointer;border:2px solid transparent;transition:all .15s
+}
+.col-swatch:hover{border-color:#fff;transform:scale(1.1)}
+
+/* Custom layout indicator on vtab */
+.vtab.has-custom::after{
+  content:'✎';position:absolute;top:3px;right:2px;font-size:8px;color:#a78bfa
+}
+
+/* ═══ ALLOCATION SYSTEM CSS ═══ */
+.tbt.alloc-btn{border-color:rgba(251,191,36,.3);color:#fbbf24}
+.tbt.alloc-btn:hover{background:rgba(251,191,36,.08)}
+
+/* Reservation card availability states */
+.rcard.avail-ok{
+  background:linear-gradient(135deg,var(--bg3),rgba(20,83,45,.15));
+  border-color:rgba(34,197,94,.2)
+}
+.rcard.avail-warn{
+  background:linear-gradient(135deg,var(--bg3),rgba(120,53,15,.2));
+  border-color:rgba(234,88,12,.35);
+  animation:warnPulse 3s infinite
+}
+.rcard.avail-none{
+  background:linear-gradient(135deg,var(--bg3),rgba(127,29,29,.2));
+  border-color:rgba(239,68,68,.35)
+}
+@keyframes warnPulse{0%,100%{border-color:rgba(234,88,12,.35)}50%{border-color:rgba(234,88,12,.6)}}
+
+.avail-badge{
+  display:flex;align-items:center;gap:4px;margin-top:5px;
+  font-size:9px;font-weight:600;padding:2px 6px;border-radius:6px;
+  width:fit-content
+}
+.avail-badge.ok{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+.avail-badge.warn{background:rgba(234,88,12,.1);color:#fb923c;border:1px solid rgba(234,88,12,.25)}
+.avail-badge.none{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+.avail-badge.assigned{background:rgba(34,197,94,.08);color:var(--free-t);border:1px solid rgba(34,197,94,.2)}
+
+/* Suggest button inside right panel */
+.suggest-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin:0 12px 6px;padding:8px;
+  background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.06));
+  border:1px solid rgba(251,191,36,.3);color:#fbbf24;
+  border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;
+  font-family:var(--bf);transition:all .15s
+}
+.suggest-btn:hover{background:rgba(251,191,36,.18);border-color:rgba(251,191,36,.5);color:#fde68a}
+
+/* Zone type badge on floor */
+.zone-type-pill{
+  position:absolute;bottom:4px;right:5px;
+  font-size:8px;background:rgba(0,0,0,.55);color:rgba(255,255,255,.5);
+  padding:1px 5px;border-radius:8px;pointer-events:none
+}
+
+/* Highlighted suggested table on map */
+.te.suggested{
+  animation:suggestGlow 1.2s infinite!important;
+  z-index:30!important
+}
+@keyframes suggestGlow{
+  0%,100%{box-shadow:0 0 0 2px #fbbf24,0 0 0 4px rgba(251,191,36,.3)}
+  50%{box-shadow:0 0 0 3px #fbbf24,0 0 16px rgba(251,191,36,.5)}
+}
+
+/* ═══ LOGIN SCREEN ═══ */
+.login-overlay{
+  position:fixed;inset:0;z-index:2000;
+  background:linear-gradient(135deg,#0d1520 0%,#161f30 50%,#0d1520 100%);
+  display:flex;align-items:center;justify-content:center;font-family:var(--bf)
+}
+.login-box{
+  width:340px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:16px;padding:30px;box-shadow:0 24px 80px rgba(0,0,0,.8);text-align:center
+}
+.login-logo{font-family:var(--hf);font-size:24px;color:var(--gold);letter-spacing:.06em;margin-bottom:3px}
+.login-sub{font-size:10px;color:var(--muted);margin-bottom:6px;letter-spacing:.1em;text-transform:uppercase}
+.login-venue-sel{
+  display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:20px
+}
+.lv-btn{
+  padding:4px 10px;background:var(--bg3);border:1px solid var(--border2);
+  color:var(--muted);border-radius:6px;font-size:10px;cursor:pointer;
+  font-family:var(--bf);transition:all .15s;font-weight:500
+}
+.lv-btn:hover{color:var(--text2);border-color:var(--goldb)}
+.lv-btn.active{background:var(--goldf);border-color:var(--goldb);color:var(--gold2);font-weight:700}
+.pin-display{
+  display:flex;gap:10px;justify-content:center;margin-bottom:20px;height:44px;align-items:center
+}
+.pin-dot{
+  width:13px;height:13px;border-radius:50%;
+  border:2px solid var(--border);background:transparent;transition:all .2s
+}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold);box-shadow:0 0 8px rgba(226,176,74,.4)}
+.pin-dot.error{background:#f87171;border-color:#f87171;animation:shake .4s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:16px}
+.pin-key{
+  padding:14px 4px;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:9px;font-size:17px;font-weight:600;color:var(--text);
+  cursor:pointer;transition:all .12s;font-family:var(--bf);user-select:none
+}
+.pin-key:hover{background:var(--bg4);border-color:var(--goldb);color:var(--gold)}
+.pin-key:active{transform:scale(.94)}
+.pin-key.del{color:var(--muted);font-size:18px}
+.pin-key.enter{background:var(--teal);border-color:var(--teal2);color:#fff;font-size:12px;font-weight:700}
+.pin-key.enter:hover{background:var(--teal2)}
+.login-hint{font-size:10px;color:var(--muted);margin-top:8px}
+.login-err{font-size:11px;color:#f87171;margin-top:8px;min-height:18px}
+
+/* NAV user chip */
+.user-chip{
+  display:flex;align-items:center;gap:5px;
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:8px;padding:4px 9px;font-size:10px;cursor:pointer;
+  transition:all .15s;white-space:nowrap
+}
+.user-chip:hover{border-color:var(--goldb)}
+.user-chip .role-name{color:var(--text2);font-weight:600}
+.user-chip .venue-tag{color:var(--gold2);font-size:9px}
+
+/* Sync indicator */
+.sync-badge{
+  display:flex;align-items:center;gap:4px;
+  font-size:9px;color:var(--muted);
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:20px;padding:3px 8px;white-space:nowrap
+}
+.sync-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sync-dot.live{background:#4ade80;animation:pulseLive 2s infinite}
+.sync-dot.offline{background:#f87171}
+.sync-dot.syncing{background:#fbbf24;animation:pulseLive .8s infinite}
+@keyframes pulseLive{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Edit lock overlay */
+.edit-lock{
+  position:absolute;inset:0;background:rgba(13,21,32,.85);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:200;pointer-events:none;border-radius:4px
+}
+.edit-lock-icon{font-size:32px;margin-bottom:6px}
+.edit-lock-text{font-size:12px;color:var(--muted);text-align:center}
+
+/* PIN manager */
+.pmr{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--bg3);border:1px solid var(--border2);border-radius:8px;margin-bottom:6px
+}
+.pmr-left{flex:1}
+.pmr-role{font-size:12px;font-weight:600;color:var(--text2)}
+.pmr-venues{font-size:9px;color:var(--muted);margin-top:2px}
+.pmr-input{
+  width:90px;background:var(--bg);border:1px solid var(--border2);
+  color:var(--gold2);padding:5px 8px;border-radius:6px;font-size:15px;font-weight:700;
+  text-align:center;letter-spacing:.12em;font-family:var(--bf);outline:none
+}
+.pmr-input:focus{border-color:var(--goldb)}
+
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+
+<!-- Firebase SDK for real-time multi-device sync -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<!-- ═══ LOGIN OVERLAY ═══ -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">Ikos Aria</div>
+    <div class="login-sub">F&B Operations Hub · v6</div>
+
+    <div id="loginStep1">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px;font-weight:500">Select your venue / role:</div>
+      <div class="login-venue-sel" id="loginVenueSel"></div>
+      <div class="login-err" id="loginErr1"></div>
+    </div>
+
+    <div id="loginStep2" style="display:none">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Logging in as:</div>
+      <div style="font-size:14px;font-weight:700;color:var(--gold2);margin-bottom:18px" id="loginRoleLabel"></div>
+      <div class="pin-display" id="pinDisplay">
+        <div class="pin-dot" id="pd0"></div>
+        <div class="pin-dot" id="pd1"></div>
+        <div class="pin-dot" id="pd2"></div>
+        <div class="pin-dot" id="pd3"></div>
+      </div>
+      <div class="pin-pad">
+        <button class="pin-key" onclick="pinKey('1')">1</button>
+        <button class="pin-key" onclick="pinKey('2')">2</button>
+        <button class="pin-key" onclick="pinKey('3')">3</button>
+        <button class="pin-key" onclick="pinKey('4')">4</button>
+        <button class="pin-key" onclick="pinKey('5')">5</button>
+        <button class="pin-key" onclick="pinKey('6')">6</button>
+        <button class="pin-key" onclick="pinKey('7')">7</button>
+        <button class="pin-key" onclick="pinKey('8')">8</button>
+        <button class="pin-key" onclick="pinKey('9')">9</button>
+        <button class="pin-key del" onclick="pinBack()">⌫</button>
+        <button class="pin-key" onclick="pinKey('0')">0</button>
+        <button class="pin-key enter" onclick="pinConfirm()">Enter ↵</button>
+      </div>
+      <div class="login-err" id="loginErr2"></div>
+      <div class="login-hint"><a onclick="loginBack()">← Back</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PIN MANAGER MODAL ═══ -->
+<div class="mo" id="pinMgrMo">
+  <div class="md">
+    <div class="mt">🔐 PIN Manager <button class="mt-close" onclick="closeM('pinMgrMo')">×</button></div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Only F&amp;B Manager can view or change PINs.</div>
+    <div id="pinMgrList"></div>
+    <div class="ma">
+      <button class="mb can" onclick="closeM('pinMgrMo')">Close</button>
+      <button class="mb pri" onclick="savePins()">💾 Save PINs</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="logo">Ikos Aria <sup>Hub v7</sup></div>
+  <div class="vtabs" id="vtabs"></div>
+  <div class="nav-r">
+    <div class="ndate" id="nd"></div>
+    <div class="sync-badge" id="syncBadge" title="Firebase sync status">
+      <div class="sync-dot offline" id="syncDot"></div>
+      <span id="syncLabel">Local</span>
+    </div>
+    <div class="user-chip" onclick="showUserMenu()" title="Logged in as">
+      <span id="chipIcon">👤</span>
+      <span class="role-name" id="chipRole">—</span>
+      <span class="venue-tag" id="chipVenue"></span>
+    </div>
+    <div class="meal-pill" id="mealPill">
+      <div class="mpill bk" data-m="breakfast" onclick="setMeal('breakfast')">🌅 Breakfast</div>
+      <div class="mpill ln" data-m="lunch" onclick="setMeal('lunch')">☀️ Lunch</div>
+      <div class="mpill dn active" data-m="dinner" onclick="setMeal('dinner')">🌙 Dinner</div>
+    </div>
+    <button class="navbtn search" onclick="openSearch()">🔍 Find Guest</button>
+    <button class="navbtn walkin" id="walkInBtn" onclick="openWalkIn()" style="display:none">🚶 Walk-in</button>
+    <button class="navbtn accent" onclick="openImport()">⬆ Import</button>
+    <button class="navbtn" onclick="openTpl()">📐 Templates</button>
+    <button class="navbtn" onclick="doExport()">⬇ Export</button>
+    <button class="navbtn" id="pinMgrBtn" onclick="openPinMgr()" style="display:none;border-color:rgba(251,191,36,.3);color:#fbbf24">🔐 PINs</button>
+  </div>
+</div>
+
+<!-- ALERT STRIP -->
+<div id="astrip" style="display:none">
+  <div class="astrip" id="astripContent"></div>
+</div>
+
+<div class="layout" id="mainLayout">
+  <!-- LEFT: Reservations -->
+  <div class="lp">
+    <div class="ph">
+      <div class="pt">Reservations</div>
+      <span class="pbadge" id="rbadge">0</span>
+    </div>
+    <div class="stats">
+      <div class="sc"><div class="sn g" id="stFree">—</div><div class="sl">Free</div></div>
+      <div class="sc"><div class="sn b" id="stRes">—</div><div class="sl">Reserved</div></div>
+      <div class="sc"><div class="sn r" id="stSeat">—</div><div class="sl">Seated</div></div>
+      <div class="sc"><div class="sn o" id="stMain">—</div><div class="sl">Mains/Dess.</div></div>
+    </div>
+    <div class="rlist" id="rlist">
+      <div style="padding:16px;text-align:center;color:var(--muted);font-size:11px">
+        No reservations<br>
+        <span style="font-size:10px;margin-top:4px;display:block">Import CSV or add manually</span>
+      </div>
+    </div>
+    <div class="pact">
+      <button class="pb pri" onclick="openAddRes()">+ Add</button>
+      <button class="pb" onclick="openImport()">📂 Import</button>
+    </div>
+  </div>
+
+  <!-- CENTER: Floor Plan -->
+  <div class="fa">
+    <div class="ftb">
+      <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Floor Plan</span>
+      <div class="legend">
+        <div class="li"><div class="ld" style="background:var(--free-t)"></div>Free</div>
+        <div class="li"><div class="ld" style="background:var(--res-t)"></div>Reserved</div>
+        <div class="li"><div class="ld" style="background:var(--seat-t)"></div>Seated</div>
+        <div class="li"><div class="ld" style="background:var(--main-t)"></div>Mains</div>
+        <div class="li"><div class="ld" style="background:var(--dess-t)"></div>Desserts</div>
+        <div class="li"><div class="ld" style="background:var(--cln-t)"></div>Cleaning</div>
+      </div>
+      <div class="tsep"></div>
+      <div class="tacts" id="normalTacts">
+        <button class="tbt" id="mrBtn" onclick="toggleMerge()">🔗 Merge</button>
+        <button class="tbt alloc-btn" onclick="autoAllocateAll()" title="Smart-assign all unassigned reservations">⚡ Auto-Allocate</button>
+        <button class="tbt" onclick="openTpl()">💾 Template</button>
+        <button class="tbt danger" onclick="resetAll()">↺ Reset</button>
+        <button class="tbt edit-btn" onclick="enterEditMode()" id="editLayoutBtn">✏️ Edit Layout</button>
+      </div>
+    </div>
+    <!-- Seating mode banner -->
+    <div class="seat-mode-banner" id="seatBanner">
+      <span>🪑</span>
+      <span id="seatBannerText">Click a FREE table to seat the guest</span>
+      <button onclick="cancelSeatMode()">✕ Cancel</button>
+    </div>
+    <!-- EDITOR TOOLBAR (hidden in normal mode) -->
+    <div class="edit-toolbar" id="editToolbar" style="display:none">
+      <div class="edit-toolbar-left">
+        <span class="edit-mode-badge">✏️ LAYOUT EDITOR — <span id="editVenueName">Fresco</span></span>
+        <div class="edit-tool-group">
+          <button class="etb" id="toolMove" onclick="setEditTool('move')" title="Select & Move">✥ Move</button>
+          <button class="etb" id="toolSquare" onclick="setEditTool('square')" title="Add square table">⬛ Add Square</button>
+          <button class="etb" id="toolRound" onclick="setEditTool('round')" title="Add round table">⬤ Add Round</button>
+          <button class="etb" id="toolZone" onclick="setEditTool('zone')" title="Draw zone area">▭ Add Zone</button>
+        </div>
+        <div class="edit-sep"></div>
+        <button class="etb red" id="deleteBtn" onclick="editDeleteSelected()" disabled title="Delete selected">🗑 Delete</button>
+      </div>
+      <div class="edit-toolbar-right">
+        <button class="etb orange" onclick="resetToDefault()">↺ Reset to Default</button>
+        <button class="etb green" onclick="saveCustomLayout()">💾 Save Layout</button>
+        <button class="etb" onclick="exitEditMode()">✕ Exit Editor</button>
+      </div>
+    </div>
+    <div class="fc" id="fc"><div class="fmap" id="fmap"></div></div>
+  </div>
+
+  <!-- RIGHT: Table/Guest panel -->
+  <div class="rp col" id="rp">
+    <div class="ph">
+      <div class="pt" id="rptitle">—</div>
+      <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:17px" onclick="closeGC()">×</button>
+    </div>
+    <div id="seatNowWrapper"></div>
+    <div class="gc" id="gc">
+      <div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">Select a table</div>
+    </div>
+    <!-- EDITOR PROPERTIES PANEL (shown in edit mode) -->
+    <div id="editPropsPanel" style="display:none;flex:1;overflow-y:auto;padding:12px">
+      <div class="gcst" style="margin-bottom:10px">Table Properties</div>
+      <div id="editNoSel" style="color:var(--muted);font-size:11px;text-align:center;padding:20px">
+        Select a table or zone to edit
+      </div>
+      <div id="editSelProps" style="display:none">
+        <div class="fg"><label class="fl">Table #</label>
+          <input class="fi" id="ep_label" type="text" placeholder="21" oninput="updateEditProp('l',this.value)">
+        </div>
+        <div class="fg"><label class="fl">Capacity (pax)</label>
+          <input class="fi" id="ep_cap" type="number" min="1" max="30" oninput="updateEditProp('cap',parseInt(this.value))">
+        </div>
+        <div class="fg"><label class="fl">Shape</label>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <button class="shbtn" id="shBtnR" onclick="updateEditShape('r')">⬛ Square</button>
+            <button class="shbtn" id="shBtnC" onclick="updateEditShape('c')">⬤ Round</button>
+          </div>
+        </div>
+        <div class="fg"><label class="fl">Section</label>
+          <input class="fi" id="ep_sec" type="text" placeholder="indoor" oninput="updateEditProp('sec',this.value)">
+        </div>
+        <div class="fg" id="zoneLabelRow" style="display:none"><label class="fl">Zone Label</label>
+          <input class="fi" id="ep_zone_label" type="text" oninput="updateZoneProp('label',this.value)">
+        </div>
+        <div class="fg" id="zoneTypeRow" style="display:none"><label class="fl">Zone Type — for smart allocation</label>
+          <select class="fi" id="ep_zone_type" onchange="updateZoneProp('type',this.value)">
+            <option value="any">🏠 Any / General</option>
+            <option value="family">👨‍👩‍👧 Family (with children)</option>
+            <option value="adults">🔞 Adults Only / Romantic</option>
+            <option value="vip">👑 VIP / Premium</option>
+            <option value="indoor">🌿 Indoor</option>
+            <option value="outdoor">🌅 Outdoor</option>
+            <option value="bar">🍸 Bar Seating</option>
+            <option value="beach">🏖 Beach / DOB</option>
+            <option value="quiet">🤫 Quiet / Intimate</option>
+            <option value="view">🌊 Sea View</option>
+          </select>
+        </div>
+        <div class="fg" id="zoneColorRow" style="display:none"><label class="fl">Zone Color</label>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <div class="col-swatch" style="background:rgba(30,70,130,0.2)" onclick="updateZoneProp('color','rgba(30,70,130,0.18)')"></div>
+            <div class="col-swatch" style="background:rgba(20,100,60,0.2)" onclick="updateZoneProp('color','rgba(20,100,60,0.18)')"></div>
+            <div class="col-swatch" style="background:rgba(200,150,80,0.2)" onclick="updateZoneProp('color','rgba(200,150,80,0.18)')"></div>
+            <div class="col-swatch" style="background:rgba(100,40,80,0.2)" onclick="updateZoneProp('color','rgba(100,40,80,0.18)')"></div>
+            <div class="col-swatch" style="background:rgba(100,60,20,0.2)" onclick="updateZoneProp('color','rgba(100,60,20,0.18)')"></div>
+            <div class="col-swatch" style="background:rgba(60,20,100,0.2)" onclick="updateZoneProp('color','rgba(60,20,100,0.18)')"></div>
+          </div>
+        </div>
+        <button class="mb" style="width:100%;margin-top:8px;background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#f87171" onclick="editDeleteSelected()">🗑 Delete Selected</button>
+      </div>
+    </div>
+    <div class="sacts">
+      <button class="sbtn sf" onclick="setS('free')">✓ Free</button>
+      <button class="sbtn sr" onclick="setS('reserved')">● Reserved</button>
+      <button class="sbtn ss" onclick="setS('seated')">↓ Seated</button>
+      <button class="sbtn sm" onclick="setS('mains')">🍽 Mains</button>
+      <button class="sbtn sd" onclick="setS('desserts')">🧁 Desserts</button>
+      <button class="sbtn sc2" onclick="setS('cleaning')">🧹 Cleaning</button>
+      <button class="sbtn mrg" onclick="toggleMerge()">🔗 Merge Tables</button>
+    </div>
+  </div>
+</div>
+
+<!-- MERGE BANNER -->
+<div class="mbanner" id="mb">
+  <span>Merge mode — select tables</span>
+  <span id="mcount">0 sel.</span>
+  <button onclick="applyMerge()">✓ Apply</button>
+  <button onclick="cancelMerge()">✕</button>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="ctx" id="ctx">
+  <div class="ch" id="cth">Table —</div>
+  <div class="ci" onclick="ctxS('free')"><div class="ld" style="background:var(--free-t)"></div>Free</div>
+  <div class="ci" onclick="ctxS('reserved')"><div class="ld" style="background:var(--res-t)"></div>Reserved</div>
+  <div class="ci" onclick="ctxS('seated')"><div class="ld" style="background:var(--seat-t)"></div>Seated</div>
+  <div class="ci" onclick="ctxS('mains')"><div class="ld" style="background:var(--main-t)"></div>Mains</div>
+  <div class="ci" onclick="ctxS('desserts')"><div class="ld" style="background:var(--dess-t)"></div>Desserts</div>
+  <div class="ci" onclick="ctxS('cleaning')"><div class="ld" style="background:var(--cln-t)"></div>Cleaning</div>
+  <div class="csep"></div>
+  <div class="ci" onclick="ctxAssign()">👤 Assign reservation</div>
+  <div class="ci" onclick="ctxMerge()">🔗 Merge tables</div>
+  <div class="csep"></div>
+  <div class="ci danger" onclick="ctxClear()">✕ Clear table</div>
+</div>
+
+<!-- SEARCH MODAL -->
+<div class="mo" id="searchMo">
+  <div class="md">
+    <div class="mt">🔍 Find Guest by Room <button class="mt-close" onclick="closeM('searchMo')">×</button></div>
+    <div class="fg">
+      <label class="fl">Room Number</label>
+      <input class="fi big" type="text" id="searchRoom" placeholder="e.g. 1123"
+        oninput="doSearch(this.value)" maxlength="6" inputmode="numeric">
+    </div>
+    <div class="search-result" id="searchResult"></div>
+    <div class="ma">
+      <button class="mb can" onclick="closeM('searchMo')">Close</button>
+      <button class="mb pri" id="searchGoBtn" style="display:none" onclick="goToSearchVenue()">→ Go to Venue</button>
+    </div>
+  </div>
+</div>
+
+<!-- WALK-IN MODAL -->
+<div class="mo" id="walkInMo">
+  <div class="md">
+    <div class="mt">🚶 Walk-in Guest <button class="mt-close" onclick="closeM('walkInMo')">×</button></div>
+    <div class="fg">
+      <label class="fl">Room Number</label>
+      <input class="fi big" type="text" id="wiRoom" placeholder="e.g. 1123"
+        oninput="lookupWalkIn(this.value)" maxlength="6" inputmode="numeric">
+    </div>
+    <div class="walkin-result" id="wiResult"></div>
+    <div class="ma" id="wiActions">
+      <button class="mb can" onclick="closeM('walkInMo')">Cancel</button>
+      <button class="mb green" id="wiSeatBtn" style="display:none" onclick="walkInSeat()">🪑 Proceed to Seating</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD RESERVATION MODAL -->
+<div class="mo" id="addMo">
+  <div class="md">
+    <div class="mt">New Reservation <button class="mt-close" onclick="closeM('addMo')">×</button></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Time</label><input class="fi" type="time" id="rTime" value="20:00"></div>
+      <div class="fg"><label class="fl">Pax</label><input class="fi" type="number" id="rPax" min="1" max="30" value="2"></div>
+    </div>
+    <div class="fg"><label class="fl">Guest Name</label><input class="fi" type="text" id="rName" placeholder="Smith John"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Room</label><input class="fi" type="text" id="rRoom" placeholder="1234"></div>
+      <div class="fg"><label class="fl">Table</label><input class="fi" type="text" id="rTable" placeholder="21"></div>
+    </div>
+    <div class="fg"><label class="fl">Allergies</label><input class="fi" type="text" id="rAllergy" placeholder="Gluten free, nut allergy..."></div>
+    <div class="fg"><label class="fl">Notes</label><input class="fi" type="text" id="rNote" placeholder="Anniversary, window seat..."></div>
+    <div class="fg"><label class="fl">Meal Period</label>
+      <select class="fi" id="rMealPeriod">
+        <option value="breakfast">🌅 Breakfast</option>
+        <option value="lunch">☀️ Lunch</option>
+        <option value="dinner" selected>🌙 Dinner</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">Flags</label>
+      <div class="ckg">
+        <div class="cki" onclick="tf(this,'vip')">👑 VIP</div>
+        <div class="cki" onclick="tf(this,'anniversary')">🥂 Anniversary</div>
+        <div class="cki" onclick="tf(this,'birthday')">🎂 Birthday</div>
+        <div class="cki" onclick="tf(this,'allergy')">⚠ Allergy</div>
+        <div class="cki" onclick="tf(this,'returning')">⭐ Returning</div>
+        <div class="cki" onclick="tf(this,'highchair')">🪑 High Chair</div>
+        <div class="cki" onclick="tf(this,'attention')">🔴 Attention</div>
+      </div>
+    </div>
+    <div class="ma">
+      <button class="mb can" onclick="closeM('addMo')">Cancel</button>
+      <button class="mb pri" onclick="saveRes()">Save Reservation</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEMPLATES MODAL -->
+<div class="mo" id="tplMo">
+  <div class="md">
+    <div class="mt">📐 Floor Templates <button class="mt-close" onclick="closeM('tplMo')">×</button></div>
+    <div class="fg"><label class="fl">Saved Templates</label><div class="tpl-grid" id="tplList"></div></div>
+    <div class="fg"><label class="fl">Save Current Layout As</label><input class="fi" type="text" id="tplName" placeholder="Gala setup, 120 covers..."></div>
+    <div class="ma">
+      <button class="mb can" onclick="closeM('tplMo')">Close</button>
+      <button class="mb pri" onclick="saveTpl()">Save Template</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="mo" id="importMo">
+  <div class="md wide">
+    <div class="mt">⬆ Import Daily Data <button class="mt-close" onclick="closeM('importMo')">×</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div>
+        <div class="fl">1. Reservations CSV (Touch&amp;Dine)</div>
+        <div class="drop-zone" id="csvZone" onclick="document.getElementById('csvInp').click()"
+          ondragover="event.preventDefault();this.classList.add('drag')"
+          ondragleave="this.classList.remove('drag')"
+          ondrop="handleDrop(event,'csv')">
+          <div class="dz-icon">📋</div>
+          <div class="dz-label"><strong>Upload CSV</strong><br>ListOfReservations.csv</div>
+          <div class="dz-status" id="csvStatus"></div>
+        </div>
+        <input type="file" id="csvInp" accept=".csv" style="display:none" onchange="loadCSV(event)">
+      </div>
+      <div>
+        <div class="fl">2. Hotel Daily Overview (XLSX)</div>
+        <div class="drop-zone" id="xlsxZone" onclick="document.getElementById('xlsxInp').click()"
+          ondragover="event.preventDefault();this.classList.add('drag')"
+          ondragleave="this.classList.remove('drag')"
+          ondrop="handleDrop(event,'xlsx')">
+          <div class="dz-icon">📊</div>
+          <div class="dz-label"><strong>Upload XLSX</strong><br>IAR__Hotel_Daily_Overview.xlsx</div>
+          <div class="dz-status" id="xlsxStatus"></div>
+        </div>
+        <input type="file" id="xlsxInp" accept=".xlsx,.xls" style="display:none" onchange="loadXLSX(event)">
+      </div>
+    </div>
+    <div id="importSummary" style="display:none">
+      <div class="imp-sum">
+        <div class="imp-hd"><span>Venue</span><span style="text-align:center">Res.</span><span style="text-align:center">Pax</span><span style="text-align:center">Period</span></div>
+        <div id="impRows"></div>
+      </div>
+    </div>
+    <div id="importAlerts" style="margin-top:10px;display:none">
+      <div class="fl">Today's Alerts</div>
+      <div id="alertsList" style="max-height:120px;overflow-y:auto;border:1px solid var(--border);border-radius:7px"></div>
+    </div>
+    <div class="ma">
+      <button class="mb can" onclick="closeM('importMo')">Close</button>
+      <button class="mb pri" id="applyImportBtn" onclick="applyImport()" style="display:none">✓ Apply to Hub</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// VENUE DATA (same as v3)
+// ═══════════════════════════════════════════════════════
+const VD = {"Fresco":{"meta":{"total":54,"inside":19,"outside":35,"seats":154,"color":"#1a6b5a"},"sections":[{"id":"bar","label":"Bar","x":42,"y":0,"w":50,"h":22,"color":"rgba(100,60,150,0.12)"},{"id":"indoor","label":"Indoor","x":14,"y":0,"w":80,"h":54,"color":"rgba(30,70,130,0.12)"},{"id":"outdoor","label":"Outdoor","x":0,"y":54,"w":100,"h":46,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id":"bs1","l":"1","x":59,"y":12,"w":3.5,"h":5,"s":"c","cap":2,"sec":"bar"},{"id":"bs105","l":"105","x":63,"y":12,"w":3.5,"h":5,"s":"c","cap":2,"sec":"bar"},{"id":"bs104","l":"104","x":67,"y":12,"w":3.5,"h":5,"s":"c","cap":2,"sec":"bar"},{"id":"bs103","l":"103","x":71,"y":12,"w":3.5,"h":5,"s":"c","cap":2,"sec":"bar"},{"id":"bs102","l":"102","x":75,"y":12,"w":3.5,"h":5,"s":"c","cap":2,"sec":"bar"},{"id":"bs101","l":"101","x":79,"y":12,"w":3.5,"h":5,"s":"c","cap":2,"sec":"bar"},{"id":"bs6","l":"6","x":56,"y":17,"w":3,"h":4.5,"s":"c","cap":2,"sec":"bar"},{"id":"t205","l":"205","x":22,"y":21,"w":5,"h":7,"s":"r","cap":4,"sec":"indoor"},{"id":"t206","l":"206","x":22,"y":30,"w":5,"h":7,"s":"r","cap":4,"sec":"indoor"},{"id":"t207","l":"207","x":22,"y":39,"w":5,"h":7,"s":"r","cap":4,"sec":"indoor"},{"id":"t208","l":"208","x":22,"y":47,"w":5,"h":7,"s":"r","cap":4,"sec":"indoor"},{"id":"t203","l":"203","x":34,"y":22,"w":7,"h":10,"s":"c","cap":6,"sec":"indoor"},{"id":"t201","l":"201","x":43,"y":22,"w":7,"h":10,"s":"c","cap":6,"sec":"indoor"},{"id":"t204","l":"204","x":34,"y":40,"w":7,"h":9,"s":"r","cap":4,"sec":"indoor"},{"id":"t202","l":"202","x":43,"y":40,"w":7,"h":9,"s":"r","cap":4,"sec":"indoor"},{"id":"t110","l":"110","x":57,"y":26,"w":7,"h":10,"s":"c","cap":6,"sec":"indoor"},{"id":"t109","l":"109","x":65,"y":35,"w":7,"h":10,"s":"c","cap":6,"sec":"indoor"},{"id":"t107","l":"107","x":74,"y":24,"w":8,"h":12,"s":"c","cap":8,"sec":"indoor"},{"id":"t111","l":"111","x":57,"y":45,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"t108","l":"108","x":74,"y":45,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"t14","l":"14","x":90,"y":59,"w":4.5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"t11","l":"11","x":90,"y":68,"w":4.5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"t12","l":"12","x":90,"y":78,"w":4.5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"t13","l":"13","x":90,"y":88,"w":4.5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"t21","l":"21","x":79,"y":57,"w":5.5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"t22","l":"22","x":79,"y":70,"w":5.5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"t23","l":"23","x":79,"y":82,"w":5.5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"t24","l":"24","x":79,"y":92,"w":5.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"t31","l":"31","x":66,"y":57,"w":5.5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"t32","l":"32","x":66,"y":70,"w":5.5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"t33","l":"33","x":66,"y":82,"w":5.5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"t34","l":"34","x":66,"y":92,"w":7,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t41","l":"41","x":56,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t42","l":"42","x":56,"y":66,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t43","l":"43","x":56,"y":75,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t44","l":"44","x":56,"y":83,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t45","l":"45","x":56,"y":92,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t51","l":"51","x":48,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t52","l":"52","x":48,"y":66,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t53","l":"53","x":48,"y":75,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t54","l":"54","x":48,"y":83,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t55","l":"55","x":48,"y":92,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t56","l":"56","x":48,"y":99,"w":5,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"t46","l":"46","x":56,"y":99,"w":5,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"t61","l":"61","x":38,"y":71,"w":6,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"t62","l":"62","x":38,"y":87,"w":6,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"t71","l":"71","x":28,"y":56,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t72","l":"72","x":28,"y":65,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t73","l":"73","x":28,"y":74,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t74","l":"74","x":28,"y":83,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t75","l":"75","x":28,"y":92,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t81","l":"81","x":15,"y":58,"w":7,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"t82","l":"82","x":15,"y":72,"w":7,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"t83","l":"83","x":15,"y":87,"w":7,"h":10,"s":"r","cap":6,"sec":"outdoor"}]},"Kos":{"meta":{"total":46,"inside":3,"outside":43,"seats":122,"color":"#1a5b7a"},"sections":[{"id":"indoor","label":"Indoor","x":42,"y":0,"w":58,"h":35,"color":"rgba(30,70,130,0.12)"},{"id":"outdoor","label":"Outdoor","x":0,"y":0,"w":42,"h":100,"color":"rgba(20,100,60,0.12)"},{"id":"outdoor2","label":"Outdoor","x":42,"y":35,"w":20,"h":65,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id":"k10","l":"10","x":65,"y":20,"w":4,"h":6,"s":"c","cap":2,"sec":"indoor"},{"id":"k11i","l":"11","x":72,"y":20,"w":4,"h":6,"s":"c","cap":2,"sec":"indoor"},{"id":"k12i","l":"12","x":79,"y":20,"w":4,"h":6,"s":"c","cap":2,"sec":"indoor"},{"id":"k84","l":"84","x":44,"y":28,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k83","l":"83","x":52,"y":28,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k82","l":"82","x":44,"y":44,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k81","l":"81","x":52,"y":44,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k77","l":"77","x":2,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k76","l":"76","x":8,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k75","l":"75","x":14,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k74","l":"74","x":20,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k73","l":"73","x":26,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k72","l":"72","x":32,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k71","l":"71","x":38,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k66","l":"66","x":2,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k65","l":"65","x":9,"y":15,"w":8,"h":9,"s":"r","cap":6,"sec":"outdoor"},{"id":"k64","l":"64","x":20,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k63","l":"63","x":26,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k62","l":"62","x":32,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k61","l":"61","x":38,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k56","l":"56","x":2,"y":29,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k55","l":"55","x":8,"y":29,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k54","l":"54","x":14,"y":29,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k53","l":"53","x":21,"y":28,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k52","l":"52","x":29,"y":28,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k51","l":"51","x":37,"y":28,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k43","l":"43","x":4,"y":40,"w":7,"h":10,"s":"c","cap":6,"sec":"outdoor"},{"id":"k42","l":"42","x":16,"y":40,"w":8,"h":9,"s":"r","cap":6,"sec":"outdoor"},{"id":"k41","l":"41","x":28,"y":40,"w":7,"h":10,"s":"c","cap":6,"sec":"outdoor"},{"id":"k35","l":"35","x":2,"y":55,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k34","l":"34","x":8,"y":55,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k33","l":"33","x":14,"y":55,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k32","l":"32","x":21,"y":54,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k31","l":"31","x":31,"y":54,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k26","l":"26","x":2,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k25","l":"25","x":8,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k24","l":"24","x":14,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k23","l":"23","x":21,"y":65,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k22","l":"22","x":31,"y":65,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"k21","l":"21","x":38,"y":65,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"k15","l":"15","x":2,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k14","l":"14","x":9,"y":78,"w":6,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k13","l":"13","x":18,"y":78,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"k12","l":"12","x":26,"y":78,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k11","l":"11","x":36,"y":78,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"}]},"Oliva":{"meta":{"total":34,"inside":12,"outside":22,"seats":104,"color":"#5a7a1a"},"sections":[{"id":"indoor","label":"Indoor","x":0,"y":0,"w":46,"h":100,"color":"rgba(30,70,130,0.12)"},{"id":"special","label":"Special","x":46,"y":0,"w":12,"h":80,"color":"rgba(100,60,20,0.12)"},{"id":"outdoor","label":"Outdoor","x":60,"y":0,"w":40,"h":100,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id":"o55","l":"55","x":5,"y":6,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o54","l":"54","x":14,"y":6,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o53","l":"53","x":23,"y":6,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o52","l":"52","x":32,"y":6,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o51","l":"51","x":41,"y":6,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o45","l":"45","x":5,"y":22,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o44","l":"44","x":14,"y":22,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o43","l":"43","x":23,"y":22,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o42","l":"42","x":32,"y":22,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o41","l":"41","x":41,"y":22,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o34","l":"34","x":5,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o33","l":"33","x":14,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o32","l":"32","x":23,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o31","l":"31","x":32,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o24","l":"24","x":5,"y":54,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o23","l":"23","x":14,"y":54,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o22","l":"22","x":23,"y":54,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o21","l":"21","x":32,"y":54,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o14","l":"14","x":5,"y":70,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o13","l":"13","x":14,"y":70,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o12","l":"12","x":23,"y":70,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o11","l":"11","x":32,"y":70,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o83","l":"83","x":48,"y":20,"w":7,"h":8,"s":"r","cap":2,"sec":"special"},{"id":"o73","l":"73","x":48,"y":45,"w":7,"h":8,"s":"r","cap":2,"sec":"special"},{"id":"o72","l":"72","x":56,"y":52,"w":6,"h":7,"s":"r","cap":2,"sec":"special"},{"id":"o100","l":"100","x":58,"y":25,"w":8,"h":25,"s":"r","cap":16,"sec":"special"},{"id":"o91","l":"91","x":67,"y":5,"w":8,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"o81a","l":"81","x":75,"y":22,"w":10,"h":14,"s":"c","cap":8,"sec":"outdoor"},{"id":"o81b","l":"81","x":89,"y":22,"w":10,"h":14,"s":"c","cap":8,"sec":"outdoor"},{"id":"o71","l":"71","x":79,"y":48,"w":10,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"o64","l":"64","x":63,"y":80,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"o63","l":"63","x":72,"y":80,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"o62","l":"62","x":81,"y":80,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"o61","l":"61","x":90,"y":80,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"}]},"Anaya":{"meta":{"total":43,"inside":8,"outside":35,"seats":134,"color":"#7a4a1a"},"sections":[{"id":"indoor","label":"Indoor","x":60,"y":0,"w":40,"h":60,"color":"rgba(30,70,130,0.12)"},{"id":"outdoor","label":"Outdoor","x":0,"y":0,"w":60,"h":100,"color":"rgba(20,100,60,0.12)"},{"id":"outdoor2","label":"Outdoor","x":60,"y":60,"w":40,"h":40,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id":"a102","l":"102","x":71,"y":18,"w":12,"h":18,"s":"r","cap":8,"sec":"indoor"},{"id":"a101","l":"101","x":71,"y":44,"w":12,"h":18,"s":"r","cap":8,"sec":"indoor"},{"id":"a99","l":"99","x":61,"y":8,"w":6,"h":10,"s":"r","cap":4,"sec":"indoor"},{"id":"a98","l":"98","x":61,"y":26,"w":6,"h":10,"s":"r","cap":4,"sec":"indoor"},{"id":"a97","l":"97","x":61,"y":44,"w":6,"h":10,"s":"r","cap":4,"sec":"indoor"},{"id":"a96","l":"96","x":62,"y":75,"w":4.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a95","l":"95","x":68,"y":75,"w":4.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a94","l":"94","x":74,"y":75,"w":4.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a93","l":"93","x":80,"y":75,"w":4.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a92","l":"92","x":86,"y":75,"w":4.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a91","l":"91","x":92,"y":75,"w":4.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a84","l":"84","x":2,"y":4,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a83","l":"83","x":8,"y":4,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a82","l":"82","x":14,"y":4,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a81","l":"81","x":20,"y":4,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a74","l":"74","x":2,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a73","l":"73","x":8,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a72","l":"72","x":14,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a71","l":"71","x":20,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a53","l":"53","x":26,"y":3,"w":9,"h":12,"s":"r","cap":6,"sec":"outdoor"},{"id":"a64","l":"64","x":2,"y":28,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a63","l":"63","x":8,"y":28,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a62","l":"62","x":14,"y":28,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a61","l":"61","x":20,"y":28,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a52","l":"52","x":28,"y":20,"w":9,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"a51","l":"51","x":38,"y":20,"w":9,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"a53r","l":"5","x":4,"y":40,"w":7,"h":10,"s":"c","cap":6,"sec":"outdoor"},{"id":"a44","l":"44","x":2,"y":42,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a43","l":"43","x":8,"y":42,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a42","l":"42","x":14,"y":42,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a41","l":"41","x":20,"y":42,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a33","l":"33","x":6,"y":55,"w":6,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"a34","l":"34","x":2,"y":56,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a26","l":"26","x":2,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a25","l":"25","x":8,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a24","l":"24","x":14,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a23","l":"23","x":20,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a22","l":"22","x":26,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a21","l":"21","x":32,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a16","l":"16","x":2,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a15","l":"15","x":8,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a14","l":"14","x":14,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a13","l":"13","x":20,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a12","l":"12","x":26,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a11","l":"11","x":32,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"}]},"Ouzo":{"meta":{"total":47,"inside":3,"outside":44,"seats":160,"color":"#7a1a3a"},"sections":[{"id":"indoor","label":"Indoor / Bar","x":0,"y":0,"w":100,"h":32,"color":"rgba(100,40,80,0.12)"},{"id":"outdoor","label":"Outdoor","x":0,"y":32,"w":100,"h":68,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id":"uz103","l":"103","x":10,"y":10,"w":9,"h":14,"s":"r","cap":4,"sec":"indoor"},{"id":"uz102","l":"102","x":23,"y":10,"w":9,"h":14,"s":"r","cap":4,"sec":"indoor"},{"id":"uz101","l":"101","x":36,"y":10,"w":9,"h":14,"s":"r","cap":4,"sec":"indoor"},{"id":"uz11","l":"11","x":83,"y":35,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz12","l":"12","x":83,"y":47,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz13","l":"13","x":83,"y":58,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz14","l":"14","x":83,"y":66,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz15","l":"15","x":83,"y":74,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz16","l":"16","x":83,"y":82,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz21","l":"21","x":75,"y":35,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz22","l":"22","x":75,"y":43,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz23","l":"23","x":75,"y":58,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz24","l":"24","x":75,"y":66,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz25","l":"25","x":75,"y":74,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz26","l":"26","x":75,"y":82,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz27","l":"27","x":75,"y":90,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz31","l":"31","x":65,"y":35,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz32","l":"32","x":65,"y":43,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz33","l":"33","x":65,"y":57,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz34","l":"34","x":65,"y":65,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz35","l":"35","x":65,"y":73,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz36","l":"36","x":65,"y":81,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz37","l":"37","x":65,"y":89,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz41","l":"41","x":54,"y":35,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz42","l":"42","x":54,"y":45,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz43","l":"43","x":54,"y":58,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz44","l":"44","x":54,"y":68,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz45","l":"45","x":54,"y":78,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz46","l":"46","x":54,"y":89,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz51","l":"51","x":44,"y":35,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz52","l":"52","x":44,"y":45,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz53","l":"53","x":44,"y":58,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz54","l":"54","x":44,"y":68,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz55","l":"55","x":44,"y":78,"w":9,"h":9,"s":"c","cap":8,"sec":"outdoor"},{"id":"uz61","l":"61","x":33,"y":33,"w":8,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"uz62","l":"62","x":33,"y":47,"w":8,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz63","l":"63","x":33,"y":58,"w":8,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz64","l":"64","x":33,"y":68,"w":8,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz65","l":"65","x":33,"y":80,"w":8,"h":10,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz71","l":"71","x":23,"y":33,"w":7,"h":10,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz72","l":"72","x":23,"y":47,"w":7,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz73","l":"73","x":23,"y":58,"w":7,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz74","l":"74","x":23,"y":68,"w":7,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz75","l":"75","x":23,"y":80,"w":7,"h":10,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz81","l":"81","x":14,"y":35,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz82","l":"82","x":14,"y":46,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz83","l":"83","x":14,"y":57,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz84","l":"84","x":14,"y":68,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz85","l":"85","x":14,"y":79,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz86","l":"86","x":14,"y":89,"w":7,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz87","l":"87","x":14,"y":97,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz91","l":"91","x":4,"y":35,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz92","l":"92","x":4,"y":43,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz93","l":"93","x":4,"y":51,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz94","l":"94","x":4,"y":59,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz95","l":"95","x":4,"y":67,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz96","l":"96","x":4,"y":79,"w":7,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz97","l":"97","x":4,"y":91,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"}]},"Provence":{"meta":{"total":52,"inside":4,"outside":48,"seats":138,"color":"#5a1a7a"},"sections":[{"id":"outdoor","label":"Outdoor","x":0,"y":0,"w":100,"h":100,"color":"rgba(20,100,60,0.1)"}],"tables":[{"id":"p91","l":"91","x":4,"y":28,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p93","l":"93","x":4,"y":44,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p94","l":"94","x":4,"y":58,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p81","l":"81","x":13,"y":28,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p82","l":"82","x":13,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p83","l":"83","x":13,"y":50,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p84","l":"84","x":13,"y":62,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p91b","l":"91","x":4,"y":18,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p71","l":"71","x":23,"y":28,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p72","l":"72","x":23,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p73","l":"73","x":23,"y":50,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p74","l":"74","x":23,"y":62,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p71b","l":"71","x":23,"y":18,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p61","l":"61","x":34,"y":28,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p62","l":"62","x":34,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p63","l":"63","x":34,"y":50,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p64","l":"64","x":34,"y":62,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p51","l":"51","x":48,"y":28,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p52","l":"52","x":48,"y":37,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p53","l":"53","x":48,"y":52,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p54","l":"54","x":48,"y":62,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p55","l":"55","x":48,"y":70,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p41","l":"41","x":57,"y":28,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p42","l":"42","x":57,"y":37,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p43","l":"43","x":57,"y":52,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p44","l":"44","x":57,"y":62,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p45","l":"45","x":59,"y":74,"w":9,"h":9,"s":"r","cap":6,"sec":"outdoor"},{"id":"p31","l":"31","x":72,"y":28,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p32","l":"32","x":72,"y":38,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p33","l":"33","x":72,"y":48,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p34","l":"34","x":72,"y":58,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p35","l":"35","x":72,"y":68,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p21","l":"21","x":80,"y":28,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p22","l":"22","x":80,"y":38,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p23","l":"23","x":80,"y":48,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p12","l":"12","x":88,"y":28,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p13","l":"13","x":88,"y":38,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p14","l":"14","x":88,"y":48,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p15","l":"15","x":88,"y":58,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p16","l":"16","x":88,"y":68,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p11","l":"11","x":88,"y":78,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p81t","l":"81","x":13,"y":18,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p31t","l":"31","x":70,"y":18,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p32t","l":"32","x":78,"y":18,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p21t","l":"21","x":86,"y":18,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p22t","l":"22","x":93,"y":18,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"}]},"Seasons":{"meta":{"total":39,"inside":3,"outside":35,"seats":133,"color":"#7a6a1a"},"sections":[{"id":"indoor","label":"Indoor","x":50,"y":0,"w":50,"h":70,"color":"rgba(30,70,130,0.12)"},{"id":"outdoor","label":"Outdoor","x":0,"y":0,"w":50,"h":100,"color":"rgba(20,100,60,0.12)"},{"id":"outdoor2","label":"Outdoor","x":50,"y":70,"w":50,"h":30,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id":"s11","l":"11","x":55,"y":4,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s12","l":"12","x":65,"y":4,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s13","l":"13","x":75,"y":4,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s14","l":"14","x":85,"y":4,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s21","l":"21","x":53,"y":18,"w":9,"h":11,"s":"c","cap":6,"sec":"indoor"},{"id":"s22","l":"22","x":65,"y":18,"w":7,"h":9,"s":"r","cap":4,"sec":"indoor"},{"id":"s23","l":"23","x":75,"y":18,"w":7,"h":9,"s":"r","cap":4,"sec":"indoor"},{"id":"s24","l":"24","x":85,"y":18,"w":7,"h":9,"s":"r","cap":4,"sec":"indoor"},{"id":"s31","l":"31","x":55,"y":32,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s32","l":"32","x":65,"y":32,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s33","l":"33","x":75,"y":32,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s34","l":"34","x":85,"y":32,"w":9,"h":10,"s":"c","cap":8,"sec":"indoor"},{"id":"s41","l":"41","x":55,"y":44,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s42","l":"42","x":65,"y":44,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s43","l":"43","x":75,"y":44,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s44","l":"44","x":85,"y":44,"w":9,"h":10,"s":"c","cap":6,"sec":"indoor"},{"id":"s51","l":"51","x":55,"y":57,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s52","l":"52","x":65,"y":57,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s53","l":"53","x":75,"y":57,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s54","l":"54","x":85,"y":57,"w":9,"h":10,"s":"c","cap":8,"sec":"indoor"},{"id":"s101","l":"101","x":27,"y":22,"w":9,"h":11,"s":"c","cap":8,"sec":"outdoor"},{"id":"s102","l":"102","x":27,"y":36,"w":9,"h":11,"s":"c","cap":8,"sec":"outdoor"},{"id":"s103","l":"103","x":27,"y":50,"w":9,"h":11,"s":"c","cap":8,"sec":"outdoor"},{"id":"s61","l":"61","x":6,"y":62,"w":9,"h":11,"s":"c","cap":8,"sec":"outdoor"},{"id":"s62","l":"62","x":14,"y":70,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s63","l":"63","x":21,"y":70,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s64","l":"64","x":28,"y":70,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s65","l":"65","x":35,"y":70,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s66","l":"66","x":42,"y":70,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s67","l":"67","x":42,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s68","l":"68","x":42,"y":86,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s71","l":"71","x":5,"y":84,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"s72","l":"72","x":14,"y":84,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s73","l":"73","x":20,"y":84,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s74","l":"74","x":26,"y":84,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s75","l":"75","x":32,"y":84,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s76","l":"76","x":38,"y":84,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s77","l":"77","x":44,"y":84,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"}]},"DOB":{"meta":{"total":10,"inside":0,"outside":10,"seats":50,"color":"#1a4a7a"},"sections":[{"id":"beach","label":"Beach","x":0,"y":40,"w":100,"h":60,"color":"rgba(200,150,80,0.15)"},{"id":"sea","label":"Sea","x":0,"y":0,"w":100,"h":40,"color":"rgba(10,40,100,0.3)"}],"tables":[{"id":"d201","l":"201","x":7,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d202","l":"202","x":17,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d203","l":"203","x":27,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d204","l":"204","x":37,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d205","l":"205","x":47,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d206","l":"206","x":57,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d207","l":"207","x":67,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d208","l":"208","x":77,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d209","l":"209","x":84,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d210","l":"210","x":91,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"}]},"Flavors":{"meta":{"total":130,"inside":53,"outside":79,"seats":388,"color":"#7a3a1a"},"sections":[{"id":"s1","label":"Zone 1","x":34,"y":0,"w":33,"h":53,"color":"rgba(30,70,130,0.12)"},{"id":"s2","label":"Zone 2","x":0,"y":53,"w":33,"h":47,"color":"rgba(20,100,60,0.12)"},{"id":"s3","label":"Zone 3","x":34,"y":53,"w":33,"h":47,"color":"rgba(100,60,20,0.12)"},{"id":"s4","label":"Zone 4","x":67,"y":53,"w":33,"h":47,"color":"rgba(60,20,100,0.12)"},{"id":"s5","label":"Zone 5","x":0,"y":0,"w":34,"h":53,"color":"rgba(20,80,100,0.12)"},{"id":"s6","label":"Zone 6","x":67,"y":0,"w":33,"h":53,"color":"rgba(100,20,60,0.12)"}],"tables":[{"id":"f31","l":"31","x":40,"y":10,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f32","l":"32","x":40,"y":22,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f21","l":"21","x":48,"y":10,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f22","l":"22","x":48,"y":18,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f23","l":"23","x":48,"y":26,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f24","l":"24","x":48,"y":34,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f11","l":"11","x":56,"y":10,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f12","l":"12","x":56,"y":18,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f13","l":"13","x":56,"y":26,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f14","l":"14","x":56,"y":34,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f61","l":"61","x":4,"y":8,"w":8,"h":10,"s":"r","cap":6,"sec":"s5"},{"id":"f51","l":"51","x":4,"y":26,"w":8,"h":10,"s":"r","cap":6,"sec":"s5"},{"id":"f41","l":"41","x":4,"y":42,"w":8,"h":10,"s":"r","cap":6,"sec":"s5"},{"id":"f52","l":"52","x":16,"y":26,"w":8,"h":10,"s":"r","cap":6,"sec":"s5"},{"id":"f53","l":"53","x":26,"y":26,"w":5,"h":7,"s":"r","cap":4,"sec":"s5"},{"id":"f42","l":"42","x":16,"y":42,"w":5,"h":7,"s":"r","cap":4,"sec":"s5"},{"id":"f43","l":"43","x":16,"y":52,"w":5,"h":7,"s":"r","cap":4,"sec":"s5"},{"id":"f76","l":"76","x":4,"y":8,"w":5,"h":7,"s":"r","cap":4,"sec":"s5"},{"id":"f77","l":"77","x":15,"y":8,"w":6,"h":7,"s":"r","cap":4,"sec":"s5"},{"id":"f31b","l":"31","x":72,"y":18,"w":5,"h":7,"s":"r","cap":4,"sec":"s6"},{"id":"f32b","l":"32","x":72,"y":28,"w":5,"h":7,"s":"r","cap":4,"sec":"s6"},{"id":"f33","l":"33","x":72,"y":38,"w":5,"h":7,"s":"r","cap":4,"sec":"s6"},{"id":"f21b","l":"21","x":80,"y":18,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f22b","l":"22","x":80,"y":28,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f23b","l":"23","x":80,"y":38,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f11b","l":"11","x":88,"y":10,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f12b","l":"12","x":88,"y":18,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f13b","l":"13","x":88,"y":28,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f14b","l":"14","x":88,"y":38,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f15","l":"15","x":88,"y":48,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f16","l":"16","x":88,"y":56,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f241","l":"41","x":4,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f242","l":"42","x":4,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f243","l":"43","x":4,"y":78,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f231","l":"31","x":12,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f232","l":"32","x":12,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f233","l":"33","x":12,"y":78,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f221","l":"21","x":20,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f222","l":"22","x":20,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f223","l":"23","x":20,"y":78,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f211","l":"11","x":28,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f212","l":"12","x":28,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f213","l":"13","x":28,"y":78,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f341","l":"41","x":36,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f342","l":"42","x":36,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f343","l":"43","x":36,"y":78,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f331","l":"31","x":44,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f332","l":"32","x":44,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f333","l":"33","x":44,"y":78,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f324","l":"24","x":52,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f321","l":"21","x":52,"y":65,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f322","l":"22","x":52,"y":75,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f323","l":"23","x":52,"y":85,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f441","l":"41","x":69,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f442","l":"42","x":69,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f431","l":"31","x":77,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f432","l":"32","x":77,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f421","l":"21","x":85,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f422","l":"22","x":85,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f411","l":"11","x":93,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f412","l":"12","x":93,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"}]}};
+
+const VENUES = ["Fresco","Anaya","Flavors","Kos","Oliva","Ouzo","Provence","Seasons","DOB","Dine Out"];
+const FLOOR_VENUES = ["Fresco","Anaya","Flavors","Kos","Oliva","Ouzo","Provence","Seasons","DOB"];
+
+// ─── State ───
+let venue='Fresco', selId=null, mergeMode=false, mergeSel=[], aFlags=[];
+let tStates={}, reservations=[], templates={}, guestProfiles={};
+let mealPeriod='dinner';
+
+// Seating mode
+let seatMode=false;
+let seatTargetResId=null; // reservation being seated
+
+// Import buffer
+let importedReservations=[], pendingImportCSV=false, pendingImportXLSX=false;
+
+// Walk-in state
+let walkInProfile=null;
+
+// Search result venue
+let searchVenueResult=null;
+
+// ─── Persistence ───
+function load(){
+  try{
+    tStates=JSON.parse(localStorage.getItem('ih4_ts')||'{}');
+    reservations=JSON.parse(localStorage.getItem('ih4_res')||'[]');
+    templates=JSON.parse(localStorage.getItem('ih4_tpl')||'{}');
+    guestProfiles=JSON.parse(localStorage.getItem('ih4_gp')||'{}');
+    customLayouts=JSON.parse(localStorage.getItem('ih5_cl')||'{}');
+  }catch(e){}
+}
+function save(){
+  try{
+    localStorage.setItem('ih4_ts',JSON.stringify(tStates));
+    localStorage.setItem('ih4_res',JSON.stringify(reservations));
+    localStorage.setItem('ih4_tpl',JSON.stringify(templates));
+    localStorage.setItem('ih4_gp',JSON.stringify(guestProfiles));
+    localStorage.setItem('ih5_cl',JSON.stringify(customLayouts));
+  }catch(e){}
+}
+
+// ─── Init ───
+function init(){
+  // Check for existing session (page refresh)
+  const sess=sessionStorage.getItem('ih6_session');
+  if(sess){
+    try{
+      currentUser=JSON.parse(sess);
+      document.getElementById('loginOverlay').style.display='none';
+      document.getElementById('chipIcon').textContent=currentUser.icon;
+      document.getElementById('chipRole').textContent=currentUser.roleLabel;
+      document.getElementById('pinMgrBtn').style.display=currentUser.canManagePins?'':'none';
+      startApp();
+      return;
+    }catch(e){sessionStorage.removeItem('ih6_session');}
+  }
+  // Fresh login
+  activePins=JSON.parse(localStorage.getItem('ih6_pins')||'null')||{...DEFAULT_PINS};
+  buildLoginSelector();
+  // Keyboard support for PIN pad
+  document.addEventListener('keydown',e=>{
+    if(document.getElementById('loginOverlay').style.display==='none') return;
+    if(e.key>='0'&&e.key<='9') pinKey(e.key);
+    else if(e.key==='Backspace') pinBack();
+    else if(e.key==='Enter') pinConfirm();
+  });
+}
+
+// ─── Tabs ───
+function buildTabs(){
+  document.getElementById('vtabs').innerHTML=VENUES.map(v=>{
+    const isDineOut=v==='Dine Out';
+    const cnt=isDineOut?0:reservations.filter(r=>r.venue===v&&r.mealPeriod===mealPeriod).length;
+    const badge=cnt>0?`<span class="vbadge">${cnt}</span>`:'';
+    const hasCustom=!isDineOut&&customLayouts[v]?' has-custom':'';
+    return `<div class="vtab${v===venue?' active':''}${isDineOut?' dineout':''}${hasCustom}" onclick="loadVenue('${v}')">${v}${badge}</div>`;
+  }).join('');
+}
+
+function loadVenue(v){
+  venue=v;
+  document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',VENUES[i]===v));
+  selId=null; closeGC();
+  // Show/hide edit button based on permission
+  const editBtn=document.getElementById('editLayoutBtn');
+  if(editBtn){
+    const canEdit=canEditVenue(v);
+    editBtn.style.opacity=canEdit?'1':'0.35';
+    editBtn.title=canEdit?'Edit Layout':'Layout edit: '+v+' Manager or F&B Manager only';
+  }
+  if(v==='Dine Out'){renderDineOut();return;}
+  renderMap(v);
+  updateStats();
+  renderRes();
+}
+
+function setMeal(m){
+  mealPeriod=m;
+  document.querySelectorAll('.mpill').forEach(t=>t.classList.toggle('active',t.dataset.m===m));
+  // Walk-in button visible only on breakfast/lunch
+  document.getElementById('walkInBtn').style.display=(m==='breakfast'||m==='lunch')?'':'none';
+  renderRes(); buildTabs(); renderMap(venue);
+}
+
+// ─── Dine Out ───
+function renderDineOut(){
+  const fa=document.querySelector('.fa');
+  const fmap=document.getElementById('fmap');
+  fmap.style.display='none';
+  const fc=document.getElementById('fc');
+  fc.innerHTML='';
+  const seated=reservations.filter(r=>tStates[`${r.venue}_${r.tableId}`]?.status==='seated'||tStates[`${r.venue}_${r.tableId}`]?.status==='mains'||tStates[`${r.venue}_${r.tableId}`]?.status==='desserts');
+  if(!seated.length){
+    fc.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No guests currently in-service across all restaurants</div>';
+    return;
+  }
+  let html='<div class="dout-list">';
+  seated.forEach(r=>{
+    const prof=guestProfiles[String(r.room)]||{};
+    const st=tStates[`${r.venue}_${r.tableId}`]||{};
+    const flags=buildFlags(r,prof).slice(0,3).map(f=>`<span class="flag ${f.cls}">${f.label}</span>`).join('');
+    const elapsed=st.seatedAt?Math.floor((Date.now()-st.seatedAt)/60000):0;
+    html+=`<div class="dout-card">
+      <div class="dout-room">${r.room||'?'}</div>
+      <div class="dout-info">
+        <div class="dout-name">${r.name} <span style="font-size:10px;color:var(--muted);font-weight:400">· ${r.venue} T${getTblLabel(r.tableId,r.venue)}</span></div>
+        <div class="dout-meta">${r.adults||r.pax||'?'} pax${r.children>0?' +'+r.children+'ch':''} · ${statusLabel(st.status||'seated')}${elapsed>0?' · '+elapsed+'min':''}</div>
+        ${flags?`<div class="dout-flags">${flags}</div>`:''}
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  fc.innerHTML=html;
+}
+
+// ─── Floor Map ───
+function renderMap(v){
+  if(v==='Dine Out'){renderDineOut();return;}
+  const fc=document.getElementById('fc');
+  const map=document.getElementById('fmap');
+  map.style.display='';
+  fc.innerHTML='';
+  fc.appendChild(map);
+  const vd=getLayout(v);
+  if(!vd){map.innerHTML='<div style="color:var(--muted);padding:40px;text-align:center">No floor plan</div>';return;}
+  map.style.width='100%'; map.style.height='100%';
+  let html='';
+  (vd.sections||[]).forEach(sec=>{
+    const zt=sec.type||'any';
+    const ztPill=zt!=='any'?`<div class="zone-type-pill">${ZONE_ICONS[zt]||''} ${ZONE_LABELS[zt]||zt}</div>`:'';
+    html+=`<div class="zone" style="left:${sec.x}%;top:${sec.y}%;width:${sec.w}%;height:${sec.h}%;background:${sec.color};border:1px solid rgba(255,255,255,0.04)"><div class="zone-lbl">${sec.label}</div>${ztPill}</div>`;
+  });
+  (vd.tables||[]).forEach(t=>{
+    const key=`${v}_${t.id}`;
+    const st=tStates[key]||{status:'free'};
+    const res=reservations.find(r=>r.id===st.reservation||r.tableId===t.id);
+    const cls=statusCls(st.status);
+    const shCls=t.s==='c'?'tc':'';
+    const isSel=t.id===selId;
+    const isMSel=mergeSel.includes(t.id);
+    const isSeatTarget=seatMode&&(st.status==='free'||st.status==='cleaning');
+    let timer='';
+    if(st.seatedAt&&st.status!=='free'){
+      const m=Math.floor((Date.now()-st.seatedAt)/60000);
+      if(m>0) timer=`<div class="tmr">${m}m</div>`;
+    }
+    let nameHint='';
+    if(res&&(st.status==='reserved'||st.status==='seated')){
+      const n=(res.name||'').split(' ').pop().substring(0,9);
+      nameHint=`<div class="tname">${n}</div>`;
+    }
+    const prof=res?guestProfiles[String(res.room)]:{};
+    const hasAlert=prof&&(prof.allergy||prof.attention||prof.specialEvent);
+    const dotColor=prof?.allergy?'var(--alg-t)':prof?.attention?'var(--att-t)':'var(--ann-t)';
+    const alertDot=hasAlert?`<div class="tflag-dot" style="background:${dotColor}"></div>`:'';
+    html+=`<div class="te ${cls} ${shCls}${isSel?' sel':''}${isMSel?' msel':''}${isSeatTarget?' seat-pick':''}"
+      id="t_${t.id}" style="left:${t.x}%;top:${t.y}%;width:${t.w}%;height:${t.h*1.55}%"
+      onclick="event.stopPropagation();onTClick('${t.id}')"
+      oncontextmenu="event.preventDefault();event.stopPropagation();onTRight('${t.id}',event)"
+      title="T${t.l} · ${t.cap}pax · ${t.sec}">${timer}${t.l}${nameHint}${alertDot}</div>`;
+  });
+  map.innerHTML=html;
+}
+
+function statusCls(s){return{free:'sf',reserved:'sr',seated:'ss',mains:'sm',desserts:'sd',cleaning:'sc2'}[s]||'sf';}
+function statusLabel(s){return{free:'Free',reserved:'Reserved',seated:'Seated',mains:'Mains',desserts:'Desserts',cleaning:'Cleaning'}[s]||s;}
+
+// ─── Table clicks ───
+function onTClick(id){
+  if(editMode) return; // editor handles its own clicks
+  if(mergeMode){toggleMSel(id);return;}
+  if(seatMode){
+    const st=tStates[`${venue}_${id}`]||{status:'free'};
+    if(st.status!=='free'&&st.status!=='cleaning'){toast('Select a FREE table','wrn');return;}
+    completeSeatMode(id);
+    return;
+  }
+  selId=id;
+  document.querySelectorAll('.te').forEach(e=>e.classList.remove('sel'));
+  document.getElementById('t_'+id)?.classList.add('sel');
+  showGC(id);
+}
+function onTRight(id,e){
+  if(seatMode) return;
+  selId=id;
+  document.querySelectorAll('.te').forEach(el=>el.classList.remove('sel'));
+  document.getElementById('t_'+id)?.classList.add('sel');
+  const t=getTbl(id);
+  document.getElementById('cth').textContent='Table '+(t?.l||id);
+  const ctx=document.getElementById('ctx');
+  ctx.style.left=Math.min(e.clientX,window.innerWidth-170)+'px';
+  ctx.style.top=Math.min(e.clientY,window.innerHeight-290)+'px';
+  ctx.classList.add('on');
+}
+function getTbl(id,v){return(getLayout(v||venue)?.tables||[]).find(t=>t.id===id);}
+function getTblLabel(tid,v){const t=(getLayout(v||venue)?.tables||[]).find(x=>x.id===tid);return t?t.l:tid;}
+function getKey(id){return`${venue}_${id}`;}
+
+function ctxS(s){setS(s);document.getElementById('ctx').classList.remove('on');}
+function ctxClear(){if(selId){tStates[getKey(selId)]={status:'free'};save();renderMap(venue);updateStats();showGC(selId);}document.getElementById('ctx').classList.remove('on');}
+function ctxAssign(){
+  const un=reservations.filter(r=>r.venue===venue&&r.mealPeriod===mealPeriod&&!r.tableId);
+  if(!un.length){toast('No unassigned reservations','wrn');return;}
+  const res=un[0];
+  res.tableId=selId;
+  tStates[getKey(selId)]={status:'reserved',reservation:res.id};
+  save();renderMap(venue);renderRes();updateStats();showGC(selId);
+  toast('Assigned: '+res.name+' → T'+selId,'suc');
+  document.getElementById('ctx').classList.remove('on');
+}
+function ctxMerge(){document.getElementById('ctx').classList.remove('on');if(!mergeMode)toggleMerge();if(selId)toggleMSel(selId);}
+
+function setS(s){
+  if(!selId) return;
+  const k=getKey(selId);
+  const prev=tStates[k]||{};
+  tStates[k]={...prev,status:s,seatedAt:s==='seated'?Date.now():prev.seatedAt};
+  save();renderMap(venue);updateStats();showGC(selId);
+  toast('T'+(getTbl(selId)?.l||selId)+' → '+statusLabel(s),'suc');
+}
+
+// ─── SEATING MODE ───
+function enterSeatMode(resId){
+  seatMode=true;
+  seatTargetResId=resId;
+  const res=reservations.find(r=>r.id===resId);
+  document.getElementById('seatBannerText').textContent=
+    `Click a FREE table to seat "${res?.name||'guest'}"`;
+  document.getElementById('seatBanner').classList.add('on');
+  renderMap(venue);
+  toast('🪑 Seating mode — click a free table','info');
+}
+function cancelSeatMode(){
+  seatMode=false; seatTargetResId=null;
+  document.getElementById('seatBanner').classList.remove('on');
+  renderMap(venue);
+}
+function completeSeatMode(tableId){
+  const res=reservations.find(r=>r.id===seatTargetResId);
+  if(!res){cancelSeatMode();return;}
+  res.tableId=tableId;
+  tStates[`${venue}_${tableId}`]={status:'seated',reservation:res.id,seatedAt:Date.now()};
+  seatMode=false; seatTargetResId=null;
+  document.getElementById('seatBanner').classList.remove('on');
+  save();renderMap(venue);renderRes();updateStats();
+  toast(`✓ ${res.name} seated at T${getTblLabel(tableId)}`,'suc');
+}
+
+// ─── Guest Card (right panel) ───
+function showGC(id){
+  document.getElementById('rp').classList.remove('col');
+  const t=getTbl(id);
+  const st=tStates[getKey(id)]||{status:'free'};
+  const res=reservations.find(r=>r.id===st.reservation||r.tableId===id);
+  document.getElementById('rptitle').textContent='T'+(t?.l||id)+' · '+(t?.cap||'?')+'pax';
+
+  // Seat-now button
+  const snw=document.getElementById('seatNowWrapper');
+  if(res&&(st.status==='reserved'||st.status==='free')){
+    snw.innerHTML=`<div class="seat-now-btn" onclick="enterSeatMode('${res.id}')">🪑 Seat at Table</div>`;
+  } else if(seatMode){
+    snw.innerHTML=`<div class="seat-now-btn cancel" onclick="cancelSeatMode()">✕ Cancel Seating</div>`;
+  } else snw.innerHTML='';
+
+  const gc=document.getElementById('gc');
+  if(res){
+    const prof=guestProfiles[String(res.room)]||{};
+    const flags=buildFlags(res,prof);
+    gc.innerHTML=`
+      <div class="gcn">${res.name}</div>
+      <div class="gcr">
+        <span>🏠 Rm ${res.room||'—'}</span><span>🕐 ${res.time||'—'}</span>
+        <span>${mpIcon(res.mealPeriod)}</span>
+      </div>
+      ${flags.length?`<div class="rflags" style="margin-bottom:8px">${flags.map(f=>`<span class="flag ${f.cls}">${f.label}</span>`).join('')}</div>`:''}
+      ${prof.allergy?`<div class="gcal">⚠️ <strong>Allergy:</strong> ${prof.allergy}</div>`:''}
+      ${prof.attention?`<div class="gcatt">🔴 <strong>Attention:</strong> ${(prof.attentionNote||'').substring(0,120)}</div>`:''}
+      ${prof.specialEvent?`<div class="gcspecial">${spIcon(prof.specialEvent)} <strong>${prof.specialEvent}</strong> — ${prof.specialItem||''} @ ${prof.specialTime||'—'}</div>`:''}
+      ${res.specialRequest||res.note?`<div class="gcno">💬 ${res.specialRequest||res.note}</div>`:''}
+      <div class="gcs">
+        <div class="gcst">Booking</div>
+        <div class="gcrow"><span>Pax</span><span>${res.adults||res.pax||'—'} adults${res.children>0?', '+res.children+' ch':''}</span></div>
+        ${res.highchair>0?`<div class="gcrow"><span>High Chair</span><span>${res.highchair}</span></div>`:''}
+        <div class="gcrow"><span>Package</span><span>${res.package||'—'}</span></div>
+        <div class="gcrow"><span>Status</span><span>${statusLabel(st.status)}</span></div>
+        ${st.seatedAt?`<div class="gcrow"><span>Seated</span><span>${Math.floor((Date.now()-st.seatedAt)/60000)} min</span></div>`:''}
+      </div>
+    `;
+  } else {
+    gc.innerHTML=`
+      <div style="color:var(--muted);font-size:11px;margin-bottom:8px">T${t?.l} · ${t?.cap}pax · ${t?.sec||'—'}</div>
+      <div style="font-size:11px;margin-bottom:12px;color:var(--text2)">${statusLabel(st.status)}</div>
+      ${st.seatedAt?`<div class="gcrow" style="font-size:11px"><span style="color:var(--muted)">Seated</span><span>${Math.floor((Date.now()-st.seatedAt)/60000)} min</span></div>`:''}
+      <button onclick="openAddRes('${id}')" style="width:100%;margin-top:10px;padding:8px;background:var(--bg3);border:1px dashed var(--border2);color:var(--muted);border-radius:7px;cursor:pointer;font-size:11px;font-family:var(--bf)">+ Assign Reservation</button>
+    `;
+  }
+}
+function closeGC(){document.getElementById('rp').classList.add('col');selId=null;document.querySelectorAll('.te').forEach(e=>e.classList.remove('sel'));document.getElementById('seatNowWrapper').innerHTML='';}
+
+function mpIcon(mp){return{breakfast:'🌅 B',lunch:'☀️ L',dinner:'🌙 D'}[mp]||'';}
+function spIcon(ev){const e=String(ev||'').toLowerCase();if(e.includes('birth'))return'🎂';if(e.includes('ann'))return'🥂';if(e.includes('honey'))return'💍';return'🎉';}
+
+function buildFlags(res,prof){
+  const f=[];
+  if(prof.repeater) f.push({cls:'returning',label:'⭐ Repeater'});
+  if(prof.complainer) f.push({cls:'complainer',label:'😤 Complainer'});
+  if(prof.deluxe) f.push({cls:'deluxe',label:'💎 Deluxe'});
+  if(prof.attention) f.push({cls:'attention',label:'🔴 Attention'});
+  if(prof.allergy) f.push({cls:'allergy',label:'⚠ Allergy'});
+  if(prof.specialEvent){
+    const e=String(prof.specialEvent).toLowerCase();
+    if(e.includes('birth')) f.push({cls:'birthday',label:'🎂 Birthday'});
+    else if(e.includes('ann')) f.push({cls:'anniversary',label:'🥂 Anniversary'});
+    else f.push({cls:'anniversary',label:'🎉 '+prof.specialEvent});
+  }
+  if(res.highchair>0) f.push({cls:'highchair',label:'🪑 HC×'+(res.highchair)});
+  if(res.overbooked) f.push({cls:'overbooked',label:'OVERBOOKED'});
+  (res.flags||[]).forEach(fl=>{if(!f.find(x=>x.cls===fl))f.push({cls:fl,label:fl.toUpperCase()});});
+  return f;
+}
+
+// ─── Reservation List ───
+function renderRes(){
+  if(venue==='Dine Out'){renderDineOut();return;}
+  const list=document.getElementById('rlist');
+  const vr=reservations.filter(r=>r.venue===venue&&r.mealPeriod===mealPeriod)
+    .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  document.getElementById('rbadge').textContent=vr.length;
+  if(!vr.length){
+    list.innerHTML=`<div style="padding:16px;text-align:center;color:var(--muted);font-size:11px">No ${mealPeriod} reservations<br><span style="font-size:10px;margin-top:3px;display:block">for ${venue}</span></div>`;
+    return;
+  }
+  const slots={};
+  vr.forEach(r=>{const t=r.time||'—';if(!slots[t])slots[t]=[];slots[t].push(r);});
+  let html='';
+  Object.keys(slots).sort().forEach(slot=>{
+    const slotPax=slots[slot].reduce((s,r)=>s+(parseInt(r.adults||r.pax)||0),0);
+    html+=`<div class="slot-head"><span>${slot}</span><span class="slot-pax">${slotPax} pax</span></div>`;
+    slots[slot].forEach(r=>{
+      const st=r.tableId?tStates[`${venue}_${r.tableId}`]||{}:{};
+      const sc=r.tableId?statusCls(st.status||'reserved'):'sf';
+      const prof=guestProfiles[String(r.room)]||{};
+      const flags=buildFlags(r,prof).slice(0,4);
+      // ── Availability badge for unassigned reservations ──
+      let availClass='', availBadge='';
+      if(!r.tableId){
+        const avail=checkAvailability(r);
+        const s=suggestTable(r,venue);
+        if(avail==='ok'&&s){
+          availClass=' avail-ok';
+          availBadge=`<div class="avail-badge ok">✓ T${s.tableLbl} · ${s.zoneIcon} ${s.zoneLabel}</div>`;
+        } else if(avail==='warn'&&s){
+          availClass=' avail-warn';
+          availBadge=`<div class="avail-badge warn">⚠ Limited — T${s.tableLbl} ${s.zoneIcon}</div>`;
+        } else if(avail==='none'){
+          availClass=' avail-none';
+          availBadge=`<div class="avail-badge none">✕ No suitable table</div>`;
+        }
+      }
+      html+=`<div class="rcard ${sc}${availClass}" onclick="onResClick('${r.id}')">
+        <div class="rt">
+          <span>${r.name}</span>
+          <span style="font-size:9px;color:var(--muted)">${r.tableId?'T'+getTblLabel(r.tableId):'unassigned'}</span>
+        </div>
+        <div class="rm">
+          <span>🏠${r.room||'—'}</span>
+          <span>👥${r.adults||r.pax||'?'}${r.children>0?' +'+r.children+'ch':''}${r.highchair>0?' 🪑':''}${r.package?' ·'+r.package:''}</span>
+        </div>
+        ${flags.length?`<div class="rflags">${flags.map(f=>`<span class="flag ${f.cls}">${f.label}</span>`).join('')}</div>`:''}
+        ${availBadge}
+      </div>`;
+    });
+  });
+  list.innerHTML=html;
+}
+
+function onResClick(resId){
+  const res=reservations.find(r=>r.id===resId);
+  if(!res) return;
+  // If has a table, focus it on the map
+  if(res.tableId){
+    selId=res.tableId;
+    document.querySelectorAll('.te').forEach(e=>e.classList.remove('sel'));
+    document.getElementById('t_'+res.tableId)?.classList.add('sel');
+    showGC(res.tableId);
+  } else {
+    // No table — show detail + seat button
+    document.getElementById('rp').classList.remove('col');
+    document.getElementById('rptitle').textContent=res.name;
+    const prof=guestProfiles[String(res.room)]||{};
+    const flags=buildFlags(res,prof);
+    document.getElementById('seatNowWrapper').innerHTML=
+      `<div class="seat-now-btn" onclick="enterSeatMode('${res.id}')">🪑 Seat at Table — click map</div>`;
+    const gc=document.getElementById('gc');
+    gc.innerHTML=`
+      <div class="gcn">${res.name}</div>
+      <div class="gcr"><span>🏠 Rm ${res.room||'—'}</span><span>🕐 ${res.time||'—'}</span><span>${mpIcon(res.mealPeriod)}</span></div>
+      ${flags.length?`<div class="rflags" style="margin-bottom:8px">${flags.map(f=>`<span class="flag ${f.cls}">${f.label}</span>`).join('')}</div>`:''}
+      ${prof.allergy?`<div class="gcal">⚠️ <strong>Allergy:</strong> ${prof.allergy}</div>`:''}
+      ${prof.attention?`<div class="gcatt">🔴 ${prof.attentionNote||prof.attention}</div>`:''}
+      ${prof.specialEvent?`<div class="gcspecial">${spIcon(prof.specialEvent)} ${prof.specialEvent} — ${prof.specialItem||''}</div>`:''}
+      <div class="gcs"><div class="gcst">Details</div>
+        <div class="gcrow"><span>Pax</span><span>${res.adults||res.pax||'?'}</span></div>
+        <div class="gcrow"><span>Package</span><span>${res.package||'—'}</span></div>
+      </div>
+    `;
+  }
+}
+
+// ─── Stats ───
+function updateStats(){
+  const ts=getLayout(venue)?.tables||[];
+  let f=0,r=0,s=0,m=0;
+  ts.forEach(t=>{
+    const st=tStates[`${venue}_${t.id}`]?.status||'free';
+    if(st==='free'||st==='cleaning')f++;
+    else if(st==='reserved')r++;
+    else if(st==='seated')s++;
+    else if(st==='mains'||st==='desserts')m++;
+  });
+  document.getElementById('stFree').textContent=f;
+  document.getElementById('stRes').textContent=r;
+  document.getElementById('stSeat').textContent=s;
+  document.getElementById('stMain').textContent=m;
+}
+
+// ─── Alert Strip ───
+function updateAlertStrip(){
+  const alg=Object.values(guestProfiles).filter(p=>p.allergy).length;
+  const att=Object.values(guestProfiles).filter(p=>p.attention).length;
+  const sp=Object.values(guestProfiles).filter(p=>p.specialEvent).length;
+  const total=reservations.length;
+  const strip=document.getElementById('astrip');
+  const content=document.getElementById('astripContent');
+  if(!alg&&!att&&!sp&&!total){strip.style.display='none';return;}
+  strip.style.display='block';
+  let h='';
+  if(total) h+=`<div class="astrip-item"><div class="astrip-dot" style="background:var(--teal2)"></div><span class="astrip-label"><strong>${total}</strong> reservations loaded</span></div>`;
+  if(alg) h+=`<div class="astrip-item"><div class="astrip-dot" style="background:var(--alg-t)"></div><span class="astrip-label"><strong>${alg}</strong> allergy guest${alg>1?'s':''}</span></div>`;
+  if(att) h+=`<div class="astrip-item"><div class="astrip-dot" style="background:var(--att-t)"></div><span class="astrip-label"><strong>${att}</strong> attention</span></div>`;
+  if(sp) h+=`<div class="astrip-item"><div class="astrip-dot" style="background:var(--ann-t)"></div><span class="astrip-label"><strong>${sp}</strong> special occasion${sp>1?'s':''}</span></div>`;
+  content.innerHTML=h;
+}
+
+// ═══════════════════════════
+// 🔍 SEARCH — Find Guest
+// ═══════════════════════════
+function openSearch(){
+  document.getElementById('searchRoom').value='';
+  document.getElementById('searchResult').classList.remove('on');
+  document.getElementById('searchResult').innerHTML='';
+  document.getElementById('searchGoBtn').style.display='none';
+  searchVenueResult=null;
+  openM('searchMo');
+  setTimeout(()=>document.getElementById('searchRoom').focus(),200);
+}
+function doSearch(val){
+  const room=val.trim();
+  const res=document.getElementById('searchResult');
+  const goBtn=document.getElementById('searchGoBtn');
+  searchVenueResult=null;
+  if(room.length<3){res.classList.remove('on');goBtn.style.display='none';return;}
+
+  // Search across all reservations
+  const found=reservations.filter(r=>String(r.room)===room);
+  const prof=guestProfiles[room]||{};
+
+  if(!found.length&&!prof.name){
+    res.innerHTML=`<div style="color:var(--muted);font-size:11px;text-align:center;padding:12px">No guest found for room ${room}</div>`;
+    res.classList.add('on');
+    goBtn.style.display='none';
+    return;
+  }
+
+  const name=found[0]?.name||prof.name||`Room ${room}`;
+  let html=`<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">${name}</div>`;
+
+  // Alerts
+  if(prof.allergy) html+=`<div class="alert-box allergy"><span>⚠️</span><div><strong>Allergy:</strong> ${prof.allergy}</div></div>`;
+  if(prof.attention) html+=`<div class="alert-box attention"><span>🔴</span><div>${prof.attentionNote||prof.attention}</div></div>`;
+  if(prof.specialEvent) html+=`<div class="alert-box special"><span>${spIcon(prof.specialEvent)}</span><div><strong>${prof.specialEvent}</strong> — ${prof.specialItem||''} @ ${prof.specialTime||'—'}</div></div>`;
+
+  if(found.length){
+    found.forEach(r=>{
+      const tbl=r.tableId?`T${getTblLabel(r.tableId,r.venue)}`:null;
+      const st=r.tableId?tStates[`${r.venue}_${r.tableId}`]:null;
+      searchVenueResult=r.venue;
+      html+=`<div style="margin-top:8px">
+        <div class="sr-venue">📍 ${r.venue} ${tbl?`· ${tbl}`:''}</div>
+        <div class="sr-row"><span>Time</span><span>${r.time||'—'}</span></div>
+        <div class="sr-row"><span>Pax</span><span>${r.adults||r.pax||'?'}${r.children>0?'+'+r.children+'ch':''}</span></div>
+        <div class="sr-row"><span>Package</span><span>${r.package||'—'}</span></div>
+        ${st?`<div class="sr-row"><span>Status</span><span>${statusLabel(st.status||'reserved')}</span></div>`:''}
+      </div>`;
+    });
+    goBtn.style.display='';
+  } else if(prof.name){
+    html+=`<div style="font-size:11px;color:var(--muted);margin-top:8px">No dinner reservation — guest is in-house</div>`;
+  }
+
+  res.innerHTML=html;
+  res.classList.add('on');
+}
+function goToSearchVenue(){
+  if(searchVenueResult){loadVenue(searchVenueResult);closeM('searchMo');toast('Navigated to '+searchVenueResult,'info');}
+}
+
+// ═══════════════════════════
+// 🚶 WALK-IN
+// ═══════════════════════════
+function openWalkIn(){
+  document.getElementById('wiRoom').value='';
+  document.getElementById('wiResult').classList.remove('on');
+  document.getElementById('wiSeatBtn').style.display='none';
+  walkInProfile=null;
+  openM('walkInMo');
+  setTimeout(()=>document.getElementById('wiRoom').focus(),200);
+}
+function lookupWalkIn(val){
+  const room=val.trim();
+  const result=document.getElementById('wiResult');
+  const btn=document.getElementById('wiSeatBtn');
+  walkInProfile=null;
+  if(room.length<3){result.classList.remove('on');btn.style.display='none';return;}
+
+  const prof=guestProfiles[room]||{};
+  // Check for any reservation already
+  const res=reservations.find(r=>String(r.room)===room&&r.mealPeriod===mealPeriod);
+
+  const name=prof.name||res?.name||`Room ${room}`;
+  let html=`<div class="walkin-card">
+    <div class="wc-name">${name}</div>
+    <div class="wc-meta">
+      <span>Room ${room}</span>
+      ${prof.checkIn?`<span>Check-in: ${prof.checkIn}</span>`:''}
+      ${prof.checkOut?`<span>Check-out: ${prof.checkOut}</span>`:''}
+    </div>`;
+
+  if(prof.allergy) html+=`<div class="alert-box allergy" style="margin-top:6px"><span>⚠️</span><div><strong>ALLERGY:</strong> ${prof.allergy}</div></div>`;
+  if(prof.attention) html+=`<div class="alert-box attention" style="margin-top:6px"><span>🔴</span><div>${prof.attentionNote||prof.attention}</div></div>`;
+  if(prof.specialEvent) html+=`<div class="alert-box special" style="margin-top:6px"><span>${spIcon(prof.specialEvent)}</span><div><strong>${prof.specialEvent}</strong> — ${prof.specialItem||''}</div></div>`;
+
+  html+='</div>';
+
+  if(res){
+    html+=`<div style="font-size:11px;color:var(--muted);background:var(--goldf);border:1px solid var(--goldb);border-radius:7px;padding:8px;margin-bottom:6px">⚠️ Already has a ${mealPeriod} reservation at ${res.venue}</div>`;
+  }
+
+  result.innerHTML=html;
+  result.classList.add('on');
+  walkInProfile={room,name,prof,existingRes:res||null};
+  btn.style.display='';
+}
+function walkInSeat(){
+  if(!walkInProfile) return;
+  // Create a temporary walk-in reservation
+  const id='wi_'+Date.now();
+  const res={
+    id, name:walkInProfile.name, room:walkInProfile.room,
+    time:new Date().toTimeString().slice(0,5),
+    pax:2,adults:2,children:0,highchair:0,
+    venue, mealPeriod, flags:[], tableId:null,
+    package:'AI', specialRequest:'WALK-IN'
+  };
+  // Enrich flags
+  const p=walkInProfile.prof;
+  if(p.allergy) res.flags.push('allergy');
+  if(p.attention) res.flags.push('attention');
+  if(p.repeater) res.flags.push('returning');
+  reservations.push(res);
+  save(); renderRes(); buildTabs();
+  closeM('walkInMo');
+  toast('Walk-in added — now seat at a table','info');
+  setTimeout(()=>enterSeatMode(id),300);
+}
+
+// ─── Merge ───
+function toggleMerge(){
+  mergeMode=!mergeMode; mergeSel=[];
+  document.getElementById('mrBtn').classList.toggle('act',mergeMode);
+  document.getElementById('mb').classList.toggle('on',mergeMode);
+  if(!mergeMode) renderMap(venue);
+}
+function toggleMSel(id){
+  const i=mergeSel.indexOf(id);
+  if(i>-1) mergeSel.splice(i,1); else mergeSel.push(id);
+  document.querySelectorAll('.te').forEach(e=>e.classList.toggle('msel',mergeSel.includes(e.id.replace('t_',''))));
+  document.getElementById('mcount').textContent=mergeSel.length+' sel.';
+}
+function applyMerge(){
+  if(mergeSel.length<2){toast('Select at least 2 tables','wrn');return;}
+  const labels=mergeSel.map(id=>(VD[venue]?.tables||[]).find(t=>t.id===id)?.l||id).join('+');
+  mergeSel.forEach(id=>{tStates[`${venue}_${id}`]={...tStates[`${venue}_${id}`]||{},merged:true,mergedLabel:labels,status:'reserved'};});
+  save();toast('Merged: T'+labels,'suc');cancelMerge();
+}
+function cancelMerge(){mergeMode=false;mergeSel=[];document.getElementById('mrBtn').classList.remove('act');document.getElementById('mb').classList.remove('on');renderMap(venue);}
+
+// ─── Modals ───
+function openM(id){document.getElementById(id).classList.add('on');}
+function closeM(id){document.getElementById(id).classList.remove('on');}
+
+function openAddRes(preTableId){
+  aFlags=[];
+  document.querySelectorAll('#addMo .cki').forEach(e=>e.classList.remove('ck'));
+  ['rName','rRoom','rAllergy','rNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rPax').value='2';
+  document.getElementById('rTime').value='20:00';
+  document.getElementById('rTable').value=preTableId?getTblLabel(preTableId):'';
+  document.getElementById('rMealPeriod').value=mealPeriod;
+  openM('addMo');
+}
+function tf(el,flag){el.classList.toggle('ck');if(el.classList.contains('ck'))aFlags.push(flag);else aFlags=aFlags.filter(f=>f!==flag);}
+
+function saveRes(){
+  const name=document.getElementById('rName').value.trim();
+  if(!name){toast('Enter guest name','wrn');return;}
+  const pax=parseInt(document.getElementById('rPax').value)||2;
+  const tableLabel=document.getElementById('rTable').value.trim();
+  const tableId=tableLabel?(VD[venue]?.tables||[]).find(t=>t.l===tableLabel)?.id:null;
+  const id='r_'+Date.now();
+  const res={id,name,time:document.getElementById('rTime').value,pax,adults:pax,children:0,
+    room:document.getElementById('rRoom').value.trim(),venue,mealPeriod:document.getElementById('rMealPeriod').value,
+    allergy:document.getElementById('rAllergy').value.trim(),
+    note:document.getElementById('rNote').value.trim(),flags:[...aFlags],tableId:tableId||null};
+  reservations.push(res);
+  if(tableId) tStates[`${venue}_${tableId}`]={status:'reserved',reservation:id};
+  save();renderMap(venue);renderRes();updateStats();buildTabs();
+  toast('Reservation saved: '+name,'suc');closeM('addMo');
+}
+
+function resetAll(){
+  if(!confirm('Reset ALL table statuses for '+venue+'?')) return;
+  Object.keys(tStates).filter(k=>k.startsWith(venue+'_')).forEach(k=>delete tStates[k]);
+  save();renderMap(venue);updateStats();toast('Reset '+venue,'suc');
+}
+
+// ─── Templates ───
+function openTpl(){
+  const tplList=document.getElementById('tplList');
+  tplList.innerHTML=Object.keys(templates).map(n=>`
+    <div class="tpc" onclick="loadTpl('${n}')">
+      <div class="tpn">${n}</div>
+      <div class="tpm">${Object.keys(templates[n]).length} tables</div>
+    </div>`).join('')||'<div style="color:var(--muted);font-size:11px">No templates saved</div>';
+  openM('tplMo');
+}
+function saveTpl(){
+  const n=document.getElementById('tplName').value.trim();
+  if(!n){toast('Enter template name','wrn');return;}
+  templates[n]=Object.fromEntries(Object.entries(tStates).filter(([k])=>k.startsWith(venue+'_')));
+  save();toast('Template "'+n+'" saved','suc');closeM('tplMo');
+}
+function loadTpl(n){
+  if(!templates[n]) return;
+  Object.assign(tStates,templates[n]);
+  save();renderMap(venue);updateStats();toast('Template "'+n+'" loaded','suc');closeM('tplMo');
+}
+
+// ─── Export ───
+function doExport(){
+  const vr=reservations.filter(r=>r.venue===venue&&r.mealPeriod===mealPeriod);
+  const lines=['Ikos Aria F&B Hub v4 — Export',
+    `Venue: ${venue} | Period: ${mealPeriod} | Date: ${new Date().toLocaleDateString('en-GB')}`,
+    '','Time,Name,Room,Adults,Children,Package,Table,Allergy,Note,Status'];
+  vr.forEach(r=>{
+    const tbl=r.tableId?getTblLabel(r.tableId):'';
+    const st=r.tableId?tStates[`${venue}_${r.tableId}`]:null;
+    const prof=guestProfiles[String(r.room)]||{};
+    lines.push([r.time,r.name,r.room,r.adults||r.pax,r.children||0,r.package,tbl,
+      prof.allergy||r.allergy||'',r.note||r.specialRequest||'',
+      statusLabel(st?.status||'reserved')].map(v=>`"${v||''}"`).join(','));
+  });
+  const blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),
+    download:`hub_${venue}_${mealPeriod}_${new Date().toISOString().slice(0,10)}.csv`});
+  a.click();URL.revokeObjectURL(a.href);
+  toast('Export ready','suc');
+}
+
+// ─── Toast ───
+function toast(msg,type='suc'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+type+' on';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2800);
+}
+
+// ═══════════════════════════════════════════════════════
+// IMPORT ENGINE (same parser as v3)
+// ═══════════════════════════════════════════════════════
+function openImport(){openM('importMo');}
+function handleDrop(e,type){e.preventDefault();e.currentTarget.classList.remove('drag');const file=e.dataTransfer.files[0];if(!file)return;if(type==='csv')processCSVFile(file);else processXLSXFile(file);}
+function loadCSV(e){const f=e.target.files[0];if(f)processCSVFile(f);e.target.value='';}
+function loadXLSX(e){const f=e.target.files[0];if(f)processXLSXFile(f);e.target.value='';}
+
+function processCSVFile(file){
+  const r=new FileReader();
+  r.onload=e=>{
+    try{const p=parseReservationsCSV(e.target.result);importedReservations=p;pendingImportCSV=true;showCSVResult(p);}
+    catch(err){document.getElementById('csvStatus').innerHTML='<div style="color:var(--att-t);font-size:10px">Error: '+err.message+'</div>';}
+  };
+  r.readAsText(file,'latin1');
+}
+
+function parseReservationsCSV(text){
+  const lines=text.split(/\r?\n/);
+  const results=[];
+  let curRest='',curPeriod='dinner',curTime='',curOverbooked=false,pendingBkg=null,pendingSR='';
+  function parseCSVLine(line){const r=[];let inQ=false,cur='';for(let ci=0;ci<line.length;ci++){const ch=line[ci];if(ch==='"')inQ=!inQ;else if(ch===','&&!inQ){r.push(cur.trim());cur='';}else cur+=ch;}r.push(cur.trim());return r;}
+  function mapV(name){const n=(name||'').trim().toUpperCase();return{'ANAYA':'Anaya','FRESCO':'Fresco','FLAVORS':'Flavors','FLAVOURS':'Flavors','KOS':'Kos','OLIVA':'Oliva','OUZO':'Ouzo','PROVENCE':'Provence','SEASONS':'Seasons','DOB':'DOB','DINING ON THE BEACH':'DOB'}[n]||name;}
+  function mapMP(s){const u=(s||'').toUpperCase();if(u.includes('BREAKFAST'))return'breakfast';if(u.includes('LUNCH'))return'lunch';return'dinner';}
+  for(let i=0;i<lines.length;i++){
+    const cols=parseCSVLine(lines[i]);
+    const c=(idx)=>(cols[idx]||'').trim();
+    const possible=['ANAYA','FRESCO','FLAVORS','FLAVOURS','KOS','OLIVA','OUZO','PROVENCE','SEASONS','DOB','DINING ON THE BEACH'];
+    if(c(12)&&possible.includes(c(12).toUpperCase())){curRest=mapV(c(12));curPeriod=mapMP(c(26)||c(17)||'dinner');}
+    if(c(0).match(/^[12][0-9]:\d{2}$/)){curTime=c(0);curOverbooked=c(14).toUpperCase().includes('OVERBOOKED');pendingBkg=null;pendingSR='';}
+    if(c(2)==='#'&&c(4)&&c(8)){pendingBkg={bookingId:c(4),guestName:c(8),adults:parseInt(c(20))||0,children:parseInt(c(25))||0};pendingSR='';}
+    if(c(1)==='Details'&&c(5)&&c(5)!=='NaN'){const req=c(5).replace(/\?S?\?!+/g,'').trim();if(req)pendingSR=req;}
+    if(c(1).match(/^\d{3,4}$/)&&c(11)&&pendingBkg){
+      const id='csv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+      results.push({id,name:c(11),room:c(1),time:curTime,venue:curRest,mealPeriod:curPeriod,
+        adults:parseInt(c(19))||pendingBkg.adults,pax:(parseInt(c(19))||pendingBkg.adults)+(parseInt(c(21))||pendingBkg.children||0),
+        children:parseInt(c(21))||pendingBkg.children||0,highchair:parseInt(c(23))||0,
+        package:c(15)||'',bookingId:pendingBkg.bookingId,
+        specialRequest:pendingSR||(c(29)&&c(29)!=='NaN'?c(29):''),
+        note:'',flags:[],overbooked:curOverbooked,tableId:null});
+    }
+  }
+  return results;
+}
+
+function showCSVResult(parsed){
+  if(!parsed.length){document.getElementById('csvStatus').innerHTML='<div style="color:var(--att-t);font-size:10px">No reservations found</div>';return;}
+  const byVenue={};
+  parsed.forEach(r=>{if(!byVenue[r.venue])byVenue[r.venue]={count:0,pax:0,period:r.mealPeriod};byVenue[r.venue].count++;byVenue[r.venue].pax+=r.adults||0;});
+  document.getElementById('csvZone').classList.add('ok');
+  document.getElementById('csvStatus').innerHTML=`<div style="color:var(--free-t);font-size:10px;margin-top:4px">✓ ${parsed.length} reservations</div>`;
+  document.getElementById('impRows').innerHTML=Object.entries(byVenue).map(([v,d])=>`<div class="imp-row"><span class="vn">${v}</span><span class="cv">${d.count}</span><span class="cv">${d.pax}</span><span class="cv">${mpIcon(d.period)}</span></div>`).join('');
+  document.getElementById('importSummary').style.display='block';
+  document.getElementById('applyImportBtn').style.display='';
+}
+
+function processXLSXFile(file){
+  if(typeof XLSX==='undefined'){document.getElementById('xlsxStatus').innerHTML='<div style="color:var(--att-t);font-size:10px">SheetJS not loaded</div>';return;}
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const profiles=parseHotelOverview(wb);
+      Object.assign(guestProfiles,profiles);
+      pendingImportXLSX=true;
+      const cnt=Object.keys(profiles).length;
+      document.getElementById('xlsxZone').classList.add('ok');
+      document.getElementById('xlsxStatus').innerHTML=`<div style="color:var(--free-t);font-size:10px;margin-top:4px">✓ ${cnt} guest profiles</div>`;
+      showXLSXAlerts(profiles);
+      document.getElementById('applyImportBtn').style.display='';
+    }catch(err){document.getElementById('xlsxStatus').innerHTML='<div style="color:var(--att-t);font-size:10px">Error: '+err.message+'</div>';}
+  };
+  r.readAsArrayBuffer(file);
+}
+
+function parseHotelOverview(wb){
+  const profiles={};
+  function sa(n){const ws=wb.Sheets[n];if(!ws)return[];return XLSX.utils.sheet_to_json(ws,{header:1,defval:''});}
+  function nr(r){return String(r||'').replace(/[^0-9]/g,'');}
+  function fd(v){if(!v)return'';if(typeof v==='string')return v.split(' ')[0];if(typeof v==='number'){const d=new Date((v-25569)*86400*1000);return d.toLocaleDateString('en-GB');}return String(v).split('T')[0];}
+  function ft(v){if(!v)return'';if(typeof v==='string')return v.length>5?v.substring(0,5):v;if(typeof v==='number'){const m=Math.round(v*24*60),h=Math.floor(m/60);return`${String(h).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;}return String(v);}
+  // In-House Master
+  try{sa('In-House Master').slice(1).forEach(row=>{const rooms=String(row[1]).split('->').map(nr).filter(r=>r.length>=3);rooms.forEach(rm=>{if(!profiles[rm])profiles[rm]={};const p=profiles[rm];if(row[0])p.name=String(row[0]).trim();if(row[2])p.checkIn=fd(row[2]);if(row[3])p.checkOut=fd(row[3]);if(row[4])p.attention=String(row[4]).trim();if(row[5])p.repeater=true;if(row[6])p.deluxe=true;if(row[7])p.complainer=true;const n=row.slice(9).filter(v=>v&&typeof v==='string'&&v.length>5);if(n.length)p.inHouseNote=n[0];});})}catch(e){}
+  // Attention
+  try{sa('ATTENTION GUESTS').slice(2).forEach(row=>{const rm=nr(row[1]);if(rm.length<3)return;if(!profiles[rm])profiles[rm]={};const p=profiles[rm];if(row[0])p.name=String(row[0]).trim();p.attention=String(row[4]||'ALL').trim();if(row[5])p.attentionNote=String(row[5]).substring(0,200);});}catch(e){}
+  // Allergy
+  try{sa('Allergy Report').forEach(row=>{const rm=nr(row[1]);if(rm.length<3)return;if(!profiles[rm])profiles[rm]={};const a=String(row[5]||'').trim().replace(/\xa0/g,'');if(a)profiles[rm].allergy=a;});}catch(e){}
+  // Special
+  try{sa('Special Offers').slice(2).forEach(row=>{const rm=nr(row[1]);if(rm.length<3)return;if(!profiles[rm])profiles[rm]={};const p=profiles[rm];p.specialEvent=String(row[2]||'').trim();p.specialItem=String(row[4]||'').trim();p.specialLocation=String(row[6]||'').trim();p.specialTime=ft(row[7]);});}catch(e){}
+  return profiles;
+}
+
+function showXLSXAlerts(profiles){
+  const alerts=Object.entries(profiles).filter(([_,p])=>p.allergy||p.attention||p.specialEvent)
+    .map(([rm,p])=>`<div style="padding:5px 10px;font-size:10px;border-bottom:1px solid var(--border2);display:flex;gap:8px;align-items:center">
+      <span style="color:var(--muted)">Rm ${rm}</span><span style="color:var(--text2);font-weight:500">${p.name||'—'}</span>
+      ${p.allergy?`<span class="flag allergy">⚠ ${p.allergy.substring(0,18)}</span>`:''}
+      ${p.attention?`<span class="flag attention">🔴</span>`:''}
+      ${p.specialEvent?`<span class="flag ${p.specialEvent.toLowerCase().includes('birth')?'birthday':'anniversary'}">${spIcon(p.specialEvent)} ${p.specialEvent}</span>`:''}
+    </div>`).join('');
+  if(alerts){document.getElementById('alertsList').innerHTML=alerts;document.getElementById('importAlerts').style.display='block';}
+}
+
+function applyImport(){
+  let added=0,skipped=0;
+  if(pendingImportCSV&&importedReservations.length){
+    importedReservations.forEach(r=>{
+      const prof=guestProfiles[String(r.room)]||{};
+      if(prof.allergy&&!r.flags.includes('allergy'))r.flags.push('allergy');
+      if(prof.attention&&!r.flags.includes('attention'))r.flags.push('attention');
+      if(prof.repeater&&!r.flags.includes('returning'))r.flags.push('returning');
+      if(prof.complainer&&!r.flags.includes('complainer'))r.flags.push('complainer');
+      if(prof.specialEvent){const e=prof.specialEvent.toLowerCase();if(e.includes('birth')&&!r.flags.includes('birthday'))r.flags.push('birthday');if(e.includes('ann')&&!r.flags.includes('anniversary'))r.flags.push('anniversary');}
+      const exists=reservations.find(x=>x.bookingId===r.bookingId&&x.venue===r.venue);
+      if(exists||!VENUES.includes(r.venue)){skipped++;return;}
+      reservations.push(r);added++;
+    });
+    pendingImportCSV=false;importedReservations=[];
+  }
+  save();renderMap(venue);renderRes();buildTabs();updateStats();updateAlertStrip();
+  toast(`✓ ${added} reservations imported${skipped?' ('+skipped+' skipped)':''}`,added?'suc':'wrn');
+  closeM('importMo');
+}
+
+// ══════════════════════════════════════════════════════════
+// ✏️ LAYOUT EDITOR v5
+// ══════════════════════════════════════════════════════════
+
+let editMode=false;
+let editTool='move';       // 'move' | 'square' | 'round' | 'zone'
+let editSelId=null;        // selected table id
+let editSelType=null;      // 'table' | 'zone'
+let customLayouts={};      // {Fresco:{sections:[],tables:[]}, ...}
+let editIdCounter=1000;    // for generating new element IDs
+
+// Drag/resize state
+let dragSt=null; // {type:'move'|'resize'|'zone', ...}
+let zoneGhost=null; // live ghost div during zone draw
+
+// ─── Get active layout (custom if exists, else default VD) ───
+function getLayout(v){
+  return customLayouts[v]?customLayouts[v]:VD[v];
+}
+
+// Deep copy a layout for editing
+function cloneLayout(v){
+  return JSON.parse(JSON.stringify(VD[v]));
+}
+
+// ─── Enter/Exit Edit Mode ───
+function enterEditMode(){
+  if(venue==='Dine Out') return;
+  if(!canEditVenue(venue)){
+    toast(`🔒 Layout edit for ${venue} requires ${venue} Manager or F&B Manager access`,'err');
+    return;
+  }
+  editMode=true;
+  editTool='move';
+  editSelId=null;
+  editSelType=null;
+
+  // Init custom layout if needed (clone from default or keep existing)
+  if(!customLayouts[venue]) customLayouts[venue]=cloneLayout(venue);
+
+  // UI switches
+  document.getElementById('normalTacts').style.display='none';
+  document.getElementById('editLayoutBtn').style.display='none';
+  document.getElementById('editToolbar').style.display='flex';
+  document.getElementById('editVenueName').textContent=venue;
+
+  // Right panel: show edit props
+  document.getElementById('gc').style.display='none';
+  document.getElementById('seatNowWrapper').style.display='none';
+  document.querySelector('.sacts').style.display='none';
+  document.getElementById('editPropsPanel').style.display='flex';
+  document.getElementById('rp').classList.remove('col');
+
+  renderEditMap();
+  toast('Layout Editor — drag tables, add new ones, resize','info');
+}
+
+function exitEditMode(){
+  editMode=false;
+  editTool='move';
+  editSelId=null;
+  dragSt=null;
+  if(zoneGhost){zoneGhost.remove();zoneGhost=null;}
+
+  // Restore UI
+  document.getElementById('normalTacts').style.display='';
+  document.getElementById('editLayoutBtn').style.display='';
+  document.getElementById('editToolbar').style.display='none';
+
+  document.getElementById('gc').style.display='';
+  document.getElementById('seatNowWrapper').style.display='';
+  document.querySelector('.sacts').style.display='';
+  document.getElementById('editPropsPanel').style.display='none';
+  document.getElementById('rp').classList.add('col');
+
+  renderMap(venue);
+  buildTabs();
+  toast('Layout saved — exited editor','suc');
+}
+
+function setEditTool(t){
+  editTool=t;
+  document.querySelectorAll('.etb[id^="tool"]').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('tool'+t.charAt(0).toUpperCase()+t.slice(1));
+  if(btn) btn.classList.add('active');
+
+  const fmap=document.getElementById('fmap');
+  fmap.className='fmap editing'+(t!=='move'?' add-mode':'');
+}
+
+// ─── Render the editor map ───
+function renderEditMap(){
+  const fmap=document.getElementById('fmap');
+  fmap.className='fmap editing'+(editTool!=='move'?' add-mode':'');
+  const layout=customLayouts[venue]||cloneLayout(venue);
+  if(!customLayouts[venue]) customLayouts[venue]=layout;
+
+  let html='';
+
+  // Sections/Zones
+  (layout.sections||[]).forEach(sec=>{
+    const isSel=editSelType==='zone'&&editSelId===sec.id;
+    const zt=sec.type||'any';
+    const ztIcon=ZONE_ICONS[zt]||'🏠';
+    html+=`<div class="zone${isSel?' edit-sel':''}"
+      id="zone_${sec.id}"
+      style="left:${sec.x}%;top:${sec.y}%;width:${sec.w}%;height:${sec.h}%;background:${sec.color};border:1px solid rgba(255,255,255,0.06);cursor:grab"
+      onmousedown="editZoneMD(event,'${sec.id}')"
+    ><div class="zone-lbl">${sec.label}</div>
+    <div class="zone-type-pill">${ztIcon} ${ZONE_LABELS[zt]||zt}</div>
+    ${isSel?renderResizeHandles('zone','zone_'+sec.id):''}</div>`;
+  });
+
+  // Tables
+  (layout.tables||[]).forEach(t=>{
+    const isSel=editSelType==='table'&&editSelId===t.id;
+    const shCls=t.s==='c'?'tc':'';
+    html+=`<div class="te sf ${shCls}${isSel?' edit-sel':''}"
+      id="t_${t.id}"
+      style="left:${t.x}%;top:${t.y}%;width:${t.w}%;height:${t.h*1.55}%;font-size:${Math.max(8,Math.min(13,t.w*1.4))}px"
+      onmousedown="editTableMD(event,'${t.id}')"
+    >${t.l}${isSel?renderResizeHandles('table','t_'+t.id):''}</div>`;
+  });
+
+  fmap.innerHTML=html;
+  attachFmapHandlers();
+}
+
+function renderResizeHandles(type, elId){
+  return ['nw','n','ne','e','se','s','sw','w'].map(h=>
+    `<div class="resize-handle ${h}" onmousedown="resizeMD(event,'${elId}','${h}')"></div>`
+  ).join('');
+}
+
+function attachFmapHandlers(){
+  const fmap=document.getElementById('fmap');
+  // Remove old handlers, add new
+  fmap.onmousedown=fmapBgMD;
+}
+
+// ─── Background click on fmap (for placing new tables / zones) ───
+function fmapBgMD(e){
+  if(e.target!==document.getElementById('fmap')) return; // not on background
+  if(!editMode) return;
+  if(editTool==='square'||editTool==='round'){
+    placeNewTable(e);
+  } else if(editTool==='zone'){
+    startZoneDraw(e);
+  } else {
+    // Deselect
+    editSelId=null; editSelType=null;
+    renderEditMap();
+    showEditProps();
+  }
+}
+
+// ─── TABLE DRAG ───
+function editTableMD(e, tid){
+  e.stopPropagation();
+  if(e.target.classList.contains('resize-handle')) return;
+  if(editTool==='square'||editTool==='round'||editTool==='zone') return;
+
+  // Select
+  editSelId=tid; editSelType='table';
+  renderEditMap();
+  showEditProps();
+
+  const layout=customLayouts[venue];
+  const t=layout.tables.find(x=>x.id===tid);
+  if(!t) return;
+  const fc=document.getElementById('fc');
+  const rect=fc.getBoundingClientRect();
+
+  dragSt={
+    type:'move-table', tid,
+    startMx:e.clientX, startMy:e.clientY,
+    startTx:t.x, startTy:t.y,
+    cw:rect.width, ch:rect.height
+  };
+  window.addEventListener('mousemove',onEditorMouseMove,{passive:true});
+  window.addEventListener('mouseup',onEditorMouseUp,{once:true});
+}
+
+function editZoneMD(e, zid){
+  e.stopPropagation();
+  if(e.target.classList.contains('resize-handle')) return;
+  if(editTool!=='move') return;
+
+  editSelId=zid; editSelType='zone';
+  renderEditMap();
+  showEditProps();
+
+  const layout=customLayouts[venue];
+  const sec=layout.sections.find(x=>x.id===zid);
+  if(!sec) return;
+  const fc=document.getElementById('fc');
+  const rect=fc.getBoundingClientRect();
+
+  dragSt={
+    type:'move-zone', zid,
+    startMx:e.clientX, startMy:e.clientY,
+    startX:sec.x, startY:sec.y,
+    cw:rect.width, ch:rect.height
+  };
+  window.addEventListener('mousemove',onEditorMouseMove,{passive:true});
+  window.addEventListener('mouseup',onEditorMouseUp,{once:true});
+}
+
+// ─── RESIZE ───
+function resizeMD(e, elId, handle){
+  e.stopPropagation();
+  e.preventDefault();
+  const layout=customLayouts[venue];
+  const fc=document.getElementById('fc');
+  const rect=fc.getBoundingClientRect();
+
+  if(elId.startsWith('t_')){
+    const tid=elId.slice(2);
+    const t=layout.tables.find(x=>x.id===tid);
+    dragSt={
+      type:'resize-table',tid,handle,
+      startMx:e.clientX,startMy:e.clientY,
+      startX:t.x,startY:t.y,startW:t.w,startH:t.h/1.55,
+      cw:rect.width,ch:rect.height
+    };
+  } else {
+    const zid=elId.slice(5);
+    const sec=layout.sections.find(x=>x.id===zid);
+    dragSt={
+      type:'resize-zone',zid,handle,
+      startMx:e.clientX,startMy:e.clientY,
+      startX:sec.x,startY:sec.y,startW:sec.w,startH:sec.h,
+      cw:rect.width,ch:rect.height
+    };
+  }
+  window.addEventListener('mousemove',onEditorMouseMove,{passive:true});
+  window.addEventListener('mouseup',onEditorMouseUp,{once:true});
+}
+
+// ─── GLOBAL MOUSE MOVE / UP ───
+function onEditorMouseMove(e){
+  if(!dragSt) return;
+  const layout=customLayouts[venue];
+  const dx=((e.clientX-dragSt.startMx)/dragSt.cw)*100;
+  const dy=((e.clientY-dragSt.startMy)/dragSt.ch)*100;
+
+  if(dragSt.type==='move-table'){
+    const t=layout.tables.find(x=>x.id===dragSt.tid);
+    if(t){
+      t.x=Math.max(0,Math.min(100,dragSt.startTx+dx));
+      t.y=Math.max(0,Math.min(100,dragSt.startTy+dy));
+      const el=document.getElementById('t_'+t.id);
+      if(el){el.style.left=t.x+'%';el.style.top=t.y+'%';}
+    }
+  } else if(dragSt.type==='move-zone'){
+    const sec=layout.sections.find(x=>x.id===dragSt.zid);
+    if(sec){
+      sec.x=Math.max(0,Math.min(100-sec.w,dragSt.startX+dx));
+      sec.y=Math.max(0,Math.min(100-sec.h,dragSt.startY+dy));
+      const el=document.getElementById('zone_'+sec.id);
+      if(el){el.style.left=sec.x+'%';el.style.top=sec.y+'%';}
+    }
+  } else if(dragSt.type==='resize-table'){
+    const t=layout.tables.find(x=>x.id===dragSt.tid);
+    if(!t) return;
+    applyResize(t,dragSt,dx,dy,'table');
+    const el=document.getElementById('t_'+t.id);
+    if(el){
+      el.style.left=t.x+'%';el.style.top=t.y+'%';
+      el.style.width=t.w+'%';el.style.height=(t.h*1.55)+'%';
+    }
+  } else if(dragSt.type==='resize-zone'){
+    const sec=layout.sections.find(x=>x.id===dragSt.zid);
+    if(!sec) return;
+    applyResize(sec,dragSt,dx,dy,'zone');
+    const el=document.getElementById('zone_'+sec.id);
+    if(el){
+      el.style.left=sec.x+'%';el.style.top=sec.y+'%';
+      el.style.width=sec.w+'%';el.style.height=sec.h+'%';
+    }
+  } else if(dragSt.type==='draw-zone'&&zoneGhost){
+    const fc=document.getElementById('fc');
+    const rect=fc.getBoundingClientRect();
+    const cx=Math.min(Math.max(0,((e.clientX-rect.left)/rect.width)*100),100);
+    const cy=Math.min(Math.max(0,((e.clientY-rect.top)/rect.height)*100),100);
+    const x=Math.min(dragSt.startPct.x,cx);
+    const y=Math.min(dragSt.startPct.y,cy);
+    const w=Math.abs(cx-dragSt.startPct.x);
+    const h=Math.abs(cy-dragSt.startPct.y);
+    zoneGhost.style.left=x+'%';zoneGhost.style.top=y+'%';
+    zoneGhost.style.width=w+'%';zoneGhost.style.height=h+'%';
+    dragSt.endPct={x,y,w,h};
+  }
+}
+
+function applyResize(obj,ds,dx,dy,type){
+  const minSz=2;
+  const h=ds.handle;
+  const rawH=type==='table'?ds.startH:ds.startH;
+
+  if(h.includes('e')){const nw=Math.max(minSz,ds.startW+dx);obj.w=nw;}
+  if(h.includes('s')){const nh=Math.max(minSz,rawH+dy);if(type==='table')obj.h=nh*1.55;else obj.h=nh;}
+  if(h.includes('w')){
+    const nw=Math.max(minSz,ds.startW-dx);
+    obj.x=ds.startX+(ds.startW-nw)/2*2;
+    obj.w=nw;
+  }
+  if(h.includes('n')){
+    const nh=Math.max(minSz,rawH-dy);
+    if(type==='table'){obj.y=ds.startY+(rawH-nh)*1.55;obj.h=nh*1.55;}
+    else{obj.y=ds.startY+(rawH-nh);obj.h=nh;}
+  }
+}
+
+function onEditorMouseUp(){
+  window.removeEventListener('mousemove',onEditorMouseMove);
+  if(dragSt?.type==='draw-zone'){
+    finalizeZone();
+  }
+  dragSt=null;
+  renderEditMap();
+  showEditProps();
+}
+
+// ─── PLACE NEW TABLE ───
+function placeNewTable(e){
+  const fc=document.getElementById('fc');
+  const rect=fc.getBoundingClientRect();
+  const x=((e.clientX-rect.left)/rect.width)*100;
+  const y=((e.clientY-rect.top)/rect.height)*100;
+  const layout=customLayouts[venue];
+  const shape=editTool; // 'square' | 'round'
+  const id='new_'+Date.now()+'_'+editIdCounter++;
+  // Find max table label
+  const nums=layout.tables.map(t=>parseInt(t.l)||0);
+  const nextNum=(nums.length?Math.max(...nums):0)+1;
+  layout.tables.push({
+    id,l:String(nextNum),x:Math.min(97,x),y:Math.min(97,y),
+    w:6,h:9.3, // h stored as logical (displayed *1.55)
+    s:shape==='round'?'c':'r',cap:4,sec:'outdoor'
+  });
+  editSelId=id; editSelType='table';
+  renderEditMap();
+  showEditProps();
+  toast('Table '+nextNum+' added — drag to position','suc');
+}
+
+// ─── DRAW ZONE ───
+function startZoneDraw(e){
+  const fc=document.getElementById('fc');
+  const rect=fc.getBoundingClientRect();
+  const x=((e.clientX-rect.left)/rect.width)*100;
+  const y=((e.clientY-rect.top)/rect.height)*100;
+
+  zoneGhost=document.createElement('div');
+  zoneGhost.className='zone-draw-ghost';
+  zoneGhost.style.left=x+'%';zoneGhost.style.top=y+'%';
+  zoneGhost.style.width='0%';zoneGhost.style.height='0%';
+  document.getElementById('fmap').appendChild(zoneGhost);
+
+  dragSt={type:'draw-zone',startPct:{x,y},endPct:{x,y,w:0,h:0},cw:rect.width,ch:rect.height};
+  window.addEventListener('mousemove',onEditorMouseMove,{passive:true});
+  window.addEventListener('mouseup',onEditorMouseUp,{once:true});
+}
+
+function finalizeZone(){
+  if(zoneGhost){zoneGhost.remove();zoneGhost=null;}
+  const ep=dragSt?.endPct;
+  if(!ep||ep.w<2||ep.h<2){return;}
+  const name=prompt('Zone name (e.g. Indoor, Outdoor, Terrace):','Zone '+(customLayouts[venue].sections.length+1));
+  if(!name) return;
+  const layout=customLayouts[venue];
+  const colors=['rgba(30,70,130,0.15)','rgba(20,100,60,0.15)','rgba(100,60,20,0.15)','rgba(139,92,246,0.12)'];
+  const col=colors[layout.sections.length%colors.length];
+  const id='zone_'+Date.now();
+  layout.sections.push({id,label:name,x:ep.x,y:ep.y,w:ep.w,h:ep.h,color:col});
+  editSelId=id;editSelType='zone';
+  renderEditMap();showEditProps();
+  toast('Zone "'+name+'" added','suc');
+}
+
+// ─── DELETE SELECTED ───
+function editDeleteSelected(){
+  if(!editSelId||!customLayouts[venue]) return;
+  const layout=customLayouts[venue];
+  if(editSelType==='table'){
+    layout.tables=layout.tables.filter(t=>t.id!==editSelId);
+    toast('Table deleted','wrn');
+  } else if(editSelType==='zone'){
+    layout.sections=layout.sections.filter(s=>s.id!==editSelId);
+    toast('Zone deleted','wrn');
+  }
+  editSelId=null;editSelType=null;
+  renderEditMap();showEditProps();
+}
+
+// ─── SHOW EDIT PROPS ───
+function showEditProps(){
+  const noSel=document.getElementById('editNoSel');
+  const selProps=document.getElementById('editSelProps');
+  const deleteBtn=document.getElementById('deleteBtn');
+  const zoneRows=['zoneLabelRow','zoneTypeRow','zoneColorRow'];
+  const tableFields=['ep_label','ep_cap','ep_sec'];
+
+  if(!editSelId){
+    noSel.style.display='';selProps.style.display='none';
+    if(deleteBtn) deleteBtn.disabled=true;
+    return;
+  }
+  noSel.style.display='none';selProps.style.display='';
+  if(deleteBtn) deleteBtn.disabled=false;
+
+  const layout=customLayouts[venue];
+
+  if(editSelType==='table'){
+    const t=layout.tables.find(x=>x.id===editSelId);
+    if(!t) return;
+    document.getElementById('ep_label').value=t.l||'';
+    document.getElementById('ep_cap').value=t.cap||4;
+    document.getElementById('ep_sec').value=t.sec||'outdoor';
+    document.getElementById('shBtnR').className='shbtn'+(t.s!=='c'?' active':'');
+    document.getElementById('shBtnC').className='shbtn'+(t.s==='c'?' active':'');
+    zoneRows.forEach(id=>document.getElementById(id).style.display='none');
+    tableFields.forEach(id=>document.getElementById(id).closest('.fg').style.display='');
+    document.getElementById('ep_sec').closest('.fg').style.display='';
+  } else if(editSelType==='zone'){
+    const sec=layout.sections.find(x=>x.id===editSelId);
+    if(!sec) return;
+    zoneRows.forEach(id=>document.getElementById(id).style.display='');
+    tableFields.forEach(id=>document.getElementById(id).closest('.fg').style.display='none');
+    document.getElementById('ep_zone_label').value=sec.label||'';
+    document.getElementById('ep_zone_type').value=sec.type||'any';
+    document.getElementById('ep_label').closest('.fg').style.display='none';
+    document.getElementById('ep_cap').closest('.fg').style.display='none';
+  }
+}
+
+function updateEditProp(prop, val){
+  if(!editSelId||editSelType!=='table') return;
+  const t=customLayouts[venue]?.tables?.find(x=>x.id===editSelId);
+  if(t) t[prop]=val;
+}
+function updateEditShape(s){
+  if(!editSelId||editSelType!=='table') return;
+  const t=customLayouts[venue]?.tables?.find(x=>x.id===editSelId);
+  if(!t) return;
+  t.s=s;
+  renderEditMap();showEditProps();
+}
+function updateZoneProp(prop, val){
+  if(!editSelId||editSelType!=='zone') return;
+  const sec=customLayouts[venue]?.sections?.find(x=>x.id===editSelId);
+  if(sec) sec[prop]=val;
+  if(prop==='color') renderEditMap();
+}
+
+// ─── SAVE / RESET ───
+function saveCustomLayout(){
+  if(!customLayouts[venue]) return;
+  save(); // persists via ih4_ts etc, we'll add layouts to save()
+  toast('Layout for '+venue+' saved! ✓','suc');
+  // Mark tab
+  buildTabs();
+}
+
+function resetToDefault(){
+  if(!confirm('Reset '+venue+' to the default layout? Custom changes will be lost.')) return;
+  delete customLayouts[venue];
+  save();
+  renderEditMap();
+  toast('Layout reset to default','wrn');
+}
+
+// ─── Make renderMap use custom layout ───
+// (patched below by overriding getLayout used in renderMap)
+
+// ─── title update ───
+function v5UpdateTitle(){
+  document.title='Ikos Aria — F&B Hub v5';
+}
+
+// ─────────────────────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════
+// 🔐 AUTH SYSTEM — Role-based PIN access
+// ══════════════════════════════════════════════════════════
+
+/*
+  ROLES SYSTEM:
+  - master        : F&B Manager — full access, all venues, edit all, manage PINs
+  - hostess       : All venues operation (status/res), no layout edit, no PIN mgr
+  - fresco_mgr    : Fresco Manager — own venue full + layout edit, read others
+  - anaya_mgr     : Anaya Manager  — same for Anaya
+  - flavors_mgr   : Flavors Manager — Flavors only
+  - kos_mgr       : Kos Manager
+  - oliva_mgr     : Oliva Manager
+  - ouzo_mgr      : Ouzo Manager
+  - provence_mgr  : Provence Manager
+  - seasons_mgr   : Seasons Manager
+  - dob_mgr       : DOB Manager
+*/
+
+// Default PINs — Vangelis changes these via PIN Manager
+const DEFAULT_PINS = {
+  master:       '0000',
+  hostess:      '1111',
+  fresco_mgr:   '2201',
+  anaya_mgr:    '2202',
+  flavors_mgr:  '2203',
+  kos_mgr:      '2204',
+  oliva_mgr:    '2205',
+  ouzo_mgr:     '2206',
+  provence_mgr: '2207',
+  seasons_mgr:  '2208',
+  dob_mgr:      '2209',
+};
+
+const ROLE_DEFS = {
+  master:       { label:'F&B Manager', icon:'👑', venues:'*', canEditLayout:'*',  canManagePins:true  },
+  hostess:      { label:'Hostess',     icon:'🌸', venues:'*', canEditLayout:false, canManagePins:false },
+  fresco_mgr:   { label:'Fresco Mgr',  icon:'🍽', venues:'*', canEditLayout:['Fresco'],   canManagePins:false },
+  anaya_mgr:    { label:'Anaya Mgr',   icon:'🍽', venues:'*', canEditLayout:['Anaya'],    canManagePins:false },
+  flavors_mgr:  { label:'Flavors Mgr', icon:'🍽', venues:'*', canEditLayout:['Flavors'],  canManagePins:false },
+  kos_mgr:      { label:'Kos Mgr',     icon:'🍽', venues:'*', canEditLayout:['Kos'],      canManagePins:false },
+  oliva_mgr:    { label:'Oliva Mgr',   icon:'🍽', venues:'*', canEditLayout:['Oliva'],    canManagePins:false },
+  ouzo_mgr:     { label:'Ouzo Mgr',    icon:'🍽', venues:'*', canEditLayout:['Ouzo'],     canManagePins:false },
+  provence_mgr: { label:'Provence Mgr',icon:'🍽', venues:'*', canEditLayout:['Provence'], canManagePins:false },
+  seasons_mgr:  { label:'Seasons Mgr', icon:'🍽', venues:'*', canEditLayout:['Seasons'],  canManagePins:false },
+  dob_mgr:      { label:'DOB Mgr',     icon:'🍽', venues:'*', canEditLayout:['DOB'],      canManagePins:false },
+};
+
+// Login steps
+let loginSelectedRole=null;
+let pinBuffer='';
+let activePins={};  // loaded from localStorage or defaults
+let currentUser=null;  // {roleId, roleLabel, icon, canEditLayout, canManagePins}
+
+// ─── Build login venue selector ───
+function buildLoginSelector(){
+  activePins=JSON.parse(localStorage.getItem('ih6_pins')||'null')||{...DEFAULT_PINS};
+  const container=document.getElementById('loginVenueSel');
+
+  // Login options shown to user
+  const loginOptions=[
+    {id:'master',     label:'👑 F&B Manager'},
+    {id:'hostess',    label:'🌸 Hostess / All Venues'},
+    {id:'fresco_mgr', label:'🍽 Fresco'},
+    {id:'anaya_mgr',  label:'🍽 Anaya'},
+    {id:'flavors_mgr',label:'🍽 Flavors'},
+    {id:'kos_mgr',    label:'🍽 Kos'},
+    {id:'oliva_mgr',  label:'🍽 Oliva'},
+    {id:'ouzo_mgr',   label:'🍽 Ouzo'},
+    {id:'provence_mgr',label:'🍽 Provence'},
+    {id:'seasons_mgr',label:'🍽 Seasons'},
+    {id:'dob_mgr',    label:'🍽 DOB'},
+  ];
+
+  container.innerHTML=loginOptions.map(o=>
+    `<button class="lv-btn" id="lvbtn_${o.id}" onclick="selectLoginRole('${o.id}','${o.label}')">${o.label}</button>`
+  ).join('');
+}
+
+function selectLoginRole(roleId, label){
+  loginSelectedRole=roleId;
+  pinBuffer='';
+  document.querySelectorAll('.lv-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('lvbtn_'+roleId)?.classList.add('active');
+  document.getElementById('loginStep1').style.display='none';
+  document.getElementById('loginStep2').style.display='';
+  document.getElementById('loginRoleLabel').textContent=label;
+  document.getElementById('loginErr2').textContent='';
+  updatePinDisplay();
+}
+
+function loginBack(){
+  document.getElementById('loginStep1').style.display='';
+  document.getElementById('loginStep2').style.display='none';
+  pinBuffer='';loginSelectedRole=null;
+  document.querySelectorAll('.lv-btn').forEach(b=>b.classList.remove('active'));
+}
+
+function pinKey(d){
+  if(pinBuffer.length>=4) return;
+  pinBuffer+=d;
+  updatePinDisplay();
+  if(pinBuffer.length===4) setTimeout(pinConfirm,150);
+}
+
+function pinBack(){
+  pinBuffer=pinBuffer.slice(0,-1);
+  updatePinDisplay();
+}
+
+function updatePinDisplay(){
+  for(let i=0;i<4;i++){
+    const dot=document.getElementById('pd'+i);
+    dot.classList.remove('filled','error');
+    if(i<pinBuffer.length) dot.classList.add('filled');
+  }
+}
+
+function pinConfirm(){
+  if(!loginSelectedRole){
+    document.getElementById('loginErr2').textContent='Select a role first';
+    return;
+  }
+  const correctPin=activePins[loginSelectedRole]||DEFAULT_PINS[loginSelectedRole];
+  if(pinBuffer===correctPin){
+    completeLogin(loginSelectedRole);
+  } else {
+    // Wrong PIN
+    for(let i=0;i<4;i++) document.getElementById('pd'+i).classList.add('error');
+    document.getElementById('loginErr2').textContent='Incorrect PIN. Try again.';
+    setTimeout(()=>{
+      pinBuffer='';
+      document.querySelectorAll('.pin-dot').forEach(d=>d.classList.remove('filled','error'));
+      document.getElementById('loginErr2').textContent='';
+    },900);
+  }
+}
+
+function completeLogin(roleId){
+  const def=ROLE_DEFS[roleId];
+  currentUser={
+    roleId,
+    roleLabel:def.label,
+    icon:def.icon,
+    canEditLayout:def.canEditLayout,
+    canManagePins:def.canManagePins,
+  };
+  // Store session
+  sessionStorage.setItem('ih6_session',JSON.stringify(currentUser));
+  // Hide overlay
+  document.getElementById('loginOverlay').style.display='none';
+  // Update chip
+  document.getElementById('chipIcon').textContent=def.icon;
+  document.getElementById('chipRole').textContent=def.label;
+  document.getElementById('chipVenue').textContent='';
+  // Show PIN manager to master only
+  document.getElementById('pinMgrBtn').style.display=def.canManagePins?'':'none';
+  // Run app
+  startApp();
+  toast('Welcome, '+def.label+' 👋','suc');
+}
+
+function showUserMenu(){
+  if(!currentUser) return;
+  const msg=currentUser.canEditLayout==='*'
+    ? 'Full access — all venues'
+    : Array.isArray(currentUser.canEditLayout)
+      ? 'Layout edit: '+currentUser.canEditLayout.join(', ')
+      : 'View & operate — no layout edit';
+  if(confirm(`Logged in as: ${currentUser.roleLabel}\n${msg}\n\nLog out?`)){
+    sessionStorage.removeItem('ih6_session');
+    currentUser=null;
+    location.reload();
+  }
+}
+
+// ─── Check if current user can edit layout of a venue ───
+function canEditVenue(v){
+  if(!currentUser) return false;
+  if(currentUser.canEditLayout==='*') return true;
+  if(!currentUser.canEditLayout) return false;
+  return currentUser.canEditLayout.includes(v);
+}
+
+// ─── PIN Manager ───
+function openPinMgr(){
+  if(!currentUser?.canManagePins){toast('Master access only','err');return;}
+  const roles=[
+    {id:'master',label:'👑 F&B Manager (Master)',venues:'All venues'},
+    {id:'hostess',label:'🌸 Hostess',venues:'All venues — no layout edit'},
+    {id:'fresco_mgr',label:'🍽 Fresco Manager',venues:'Fresco layout'},
+    {id:'anaya_mgr',label:'🍽 Anaya Manager',venues:'Anaya layout'},
+    {id:'flavors_mgr',label:'🍽 Flavors Manager',venues:'Flavors layout'},
+    {id:'kos_mgr',label:'🍽 Kos Manager',venues:'Kos layout'},
+    {id:'oliva_mgr',label:'🍽 Oliva Manager',venues:'Oliva layout'},
+    {id:'ouzo_mgr',label:'🍽 Ouzo Manager',venues:'Ouzo layout'},
+    {id:'provence_mgr',label:'🍽 Provence Manager',venues:'Provence layout'},
+    {id:'seasons_mgr',label:'🍽 Seasons Manager',venues:'Seasons layout'},
+    {id:'dob_mgr',label:'🍽 DOB Manager',venues:'DOB layout'},
+  ];
+  const list=document.getElementById('pinMgrList');
+  list.innerHTML=roles.map(r=>`
+    <div class="pmr">
+      <div class="pmr-left">
+        <div class="pmr-role">${r.label}</div>
+        <div class="pmr-venues">${r.venues}</div>
+      </div>
+      <input class="pmr-input" type="password" maxlength="6" id="pin_${r.id}"
+        value="${activePins[r.id]||DEFAULT_PINS[r.id]||''}"
+        placeholder="••••" autocomplete="off">
+    </div>`).join('');
+  openM('pinMgrMo');
+}
+
+function savePins(){
+  const roles=Object.keys(DEFAULT_PINS);
+  roles.forEach(r=>{
+    const el=document.getElementById('pin_'+r);
+    if(el&&el.value.trim().length>=4) activePins[r]=el.value.trim();
+  });
+  localStorage.setItem('ih6_pins',JSON.stringify(activePins));
+  toast('PINs saved securely ✓','suc');
+  closeM('pinMgrMo');
+}
+
+// ══════════════════════════════════════════════════════════
+// 🔥 FIREBASE REALTIME SYNC
+// ══════════════════════════════════════════════════════════
+
+/*
+  SETUP INSTRUCTIONS:
+  1. Go to https://console.firebase.google.com
+  2. Create a new project: "ikos-aria-hub"
+  3. Add a Web App → copy the firebaseConfig
+  4. Go to Build → Realtime Database → Create database (start in test mode)
+  5. Replace the config below with your real config
+  6. Done — all 14 devices will sync in real-time!
+*/
+
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyCY1aLJGTeAaj9uRkXKgj7WN_jtw59n_fA",
+  authDomain:        "ikos-aria-hub.firebaseapp.com",
+  databaseURL:       "https://ikos-aria-hub-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "ikos-aria-hub",
+  storageBucket:     "ikos-aria-hub.firebasestorage.app",
+  messagingSenderId: "91730022956",
+  appId:             "1:91730022956:web:060cc858396f909242f789",
+  measurementId:     "G-HHCWYBK31K"
+};
+
+let firebaseDB=null;
+let syncEnabled=false;
+let syncThrottle=null;
+
+function initFirebase(){
+  try{
+    if(FIREBASE_CONFIG.apiKey==='YOUR_API_KEY'){
+      setSyncStatus('offline','Local only');
+      return;
+    }
+    const app=firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseDB=firebase.database(app);
+    // Test connection
+    firebaseDB.ref('.info/connected').on('value',snap=>{
+      if(snap.val()===true){
+        syncEnabled=true;
+        setSyncStatus('live','Live sync');
+        startFirebaseListeners();
+      } else {
+        syncEnabled=false;
+        setSyncStatus('offline','Reconnecting...');
+      }
+    });
+  }catch(e){
+    setSyncStatus('offline','Local only');
+    console.warn('Firebase not configured:',e.message);
+  }
+}
+
+function setSyncStatus(state,label){
+  const dot=document.getElementById('syncDot');
+  const lbl=document.getElementById('syncLabel');
+  dot.className='sync-dot '+state;
+  lbl.textContent=label;
+}
+
+// Real-time listeners — only listen, don't overwrite our own changes
+let isWriting=false;
+
+function startFirebaseListeners(){
+  // Table states
+  firebaseDB.ref('tStates').on('value',snap=>{
+    if(isWriting) return;
+    const remote=snap.val();
+    if(remote){Object.assign(tStates,remote);renderMap(venue);updateStats();}
+  });
+  // Reservations
+  firebaseDB.ref('reservations').on('value',snap=>{
+    if(isWriting) return;
+    const remote=snap.val();
+    if(remote&&Array.isArray(remote)){
+      reservations=remote;renderRes();buildTabs();updateAlertStrip();
+    }
+  });
+  // Guest profiles
+  firebaseDB.ref('guestProfiles').on('value',snap=>{
+    if(isWriting) return;
+    const remote=snap.val();
+    if(remote) Object.assign(guestProfiles,remote);
+  });
+  // Custom layouts
+  firebaseDB.ref('customLayouts').on('value',snap=>{
+    if(isWriting) return;
+    const remote=snap.val();
+    if(remote) Object.assign(customLayouts,remote);
+  });
+}
+
+// Push to Firebase (throttled — fires 1s after last change)
+function syncToFirebase(){
+  if(!syncEnabled||!firebaseDB) return;
+  clearTimeout(syncThrottle);
+  setSyncStatus('syncing','Syncing...');
+  syncThrottle=setTimeout(async()=>{
+    try{
+      isWriting=true;
+      await firebaseDB.ref('tStates').set(tStates);
+      await firebaseDB.ref('reservations').set(reservations);
+      await firebaseDB.ref('guestProfiles').set(guestProfiles);
+      await firebaseDB.ref('customLayouts').set(customLayouts);
+      isWriting=false;
+      setSyncStatus('live','Live sync');
+    }catch(e){
+      isWriting=false;
+      setSyncStatus('offline','Sync error');
+    }
+  },1000);
+}
+
+// ─── Patch save() to also sync ───
+const _origSave=save;
+function save(){
+  _origSave();
+  syncToFirebase();
+}
+
+// ══════════════════════════════════════════════════════════
+// ─── Boot sequence ───
+// ══════════════════════════════════════════════════════════
+
+function startApp(){
+  load();
+  document.getElementById('nd').textContent=new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+  buildTabs();
+  loadVenue('Fresco');
+  renderRes();
+  updateAlertStrip();
+  setInterval(()=>renderMap(venue),60000);
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('#ctx')) document.getElementById('ctx').classList.remove('on');
+  });
+  document.getElementById('searchRoom').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch(e.target.value);});
+  document.getElementById('wiRoom').addEventListener('keydown',e=>{if(e.key==='Enter')lookupWalkIn(e.target.value);});
+  initFirebase();
+}
+
+// ══════════════════════════════════════════════════════════
+// ⚡ SMART TABLE ALLOCATION ENGINE v7
+// ══════════════════════════════════════════════════════════
+
+/*
+  ZONE TYPES (set by manager in Layout Editor → Zone Properties):
+  any, family, adults, vip, indoor, outdoor, bar, beach, quiet, view
+
+  GUEST PREFERENCE RULES:
+  - children > 0 / highchair > 0  → family zone preferred
+  - vip / deluxe flag              → vip zone preferred
+  - anniversary / birthday         → adults or quiet or view preferred
+  - adults, no children            → adults or outdoor or view
+  - special request includes words → matched to zone keywords
+  - Package "Deluxe"               → vip preferred
+  - Repeater                       → same zone as last visit (not yet tracked)
+*/
+
+const ZONE_ICONS={
+  any:'🏠', family:'👨‍👩‍👧', adults:'🔞', vip:'👑',
+  indoor:'🌿', outdoor:'🌅', bar:'🍸', beach:'🏖',
+  quiet:'🤫', view:'🌊'
+};
+const ZONE_LABELS={
+  any:'Any',family:'Family',adults:'Adults Only',vip:'VIP / Premium',
+  indoor:'Indoor',outdoor:'Outdoor',bar:'Bar',beach:'Beach',
+  quiet:'Quiet / Intimate',view:'Sea View'
+};
+
+// ─── Get zone type for a section id in the current venue ───
+function getZoneType(v, secId){
+  const layout=getLayout(v);
+  const sec=(layout?.sections||[]).find(s=>s.id===secId);
+  return sec?.type||'any';
+}
+
+// ─── Derive preferred zone types from a reservation + profile ───
+function getPreferredZones(res, prof){
+  const zones=[];
+  const pax=parseInt(res.adults||res.pax)||1;
+  const children=parseInt(res.children)||0;
+  const highchair=parseInt(res.highchair)||0;
+  const flags=res.flags||[];
+  const pkg=(res.package||'').toLowerCase();
+  const note=(res.specialRequest||res.note||'').toLowerCase();
+
+  // VIP / Deluxe
+  if(flags.includes('vip')||prof.deluxe||pkg.includes('deluxe')||pkg.includes('vip')){
+    zones.push('vip');
+  }
+
+  // Family (children present)
+  if(children>0||highchair>0){
+    zones.push('family');
+    zones.push('outdoor'); // families usually prefer outdoor
+  }
+
+  // Anniversary / Birthday → romantic / adults / view
+  if(flags.includes('anniversary')||prof?.specialEvent?.toLowerCase().includes('ann')){
+    zones.push('adults','quiet','view');
+  }
+  if(flags.includes('birthday')||prof?.specialEvent?.toLowerCase().includes('birth')){
+    zones.push('adults','view','outdoor');
+  }
+
+  // Note keywords
+  if(note.includes('view')||note.includes('sea')) zones.push('view');
+  if(note.includes('quiet')||note.includes('private')) zones.push('quiet');
+  if(note.includes('indoor')||note.includes('inside')) zones.push('indoor');
+  if(note.includes('outdoor')||note.includes('outside')||note.includes('terrace')) zones.push('outdoor');
+  if(note.includes('beach')) zones.push('beach');
+
+  // Adults only (no children, no family flag)
+  if(children===0&&highchair===0&&!flags.includes('vip')){
+    if(pax<=2) zones.push('adults','view','quiet');
+    else zones.push('outdoor','any');
+  }
+
+  // Default fallback
+  if(!zones.length) zones.push('any');
+
+  // Deduplicate preserving order
+  return [...new Set(zones)];
+}
+
+// ─── Score a specific table for a reservation ───
+function scoreTable(tableId, res, prof, v){
+  const layout=getLayout(v||venue);
+  const t=(layout?.tables||[]).find(x=>x.id===tableId);
+  if(!t) return -999;
+
+  // Table must be free
+  const st=tStates[`${v||venue}_${tableId}`]||{};
+  if(st.status&&st.status!=='free'&&st.status!=='cleaning') return -999;
+  // Must not already be assigned to another reservation
+  if(reservations.find(r=>r.tableId===tableId&&r.id!==res.id&&r.venue===(v||venue))) return -990;
+
+  const pax=parseInt(res.adults||res.pax)||1;
+  const children=parseInt(res.children)||0;
+  const totalPax=pax+children;
+  let score=0;
+
+  // ── Capacity scoring ──
+  const diff=t.cap-totalPax;
+  if(diff<0) return -999; // can't fit
+  if(diff===0) score+=40;
+  else if(diff===1) score+=34;
+  else if(diff===2) score+=26;
+  else if(diff===3) score+=18;
+  else score+=Math.max(0,12-diff*2); // heavy penalty for oversized
+
+  // ── Zone scoring ──
+  const preferred=getPreferredZones(res,prof);
+  const zoneType=getZoneType(v||venue,t.sec);
+
+  if(preferred[0]===zoneType) score+=50; // top preference exact match
+  else if(preferred.includes(zoneType)) score+=30; // secondary match
+  else if(zoneType==='any') score+=10; // neutral zone
+  else score-=5; // wrong zone
+
+  // ── Small bonus for already-labelled sections ──
+  const sec=(layout?.sections||[]).find(s=>s.id===t.sec);
+  if(sec&&sec.label) score+=2;
+
+  return score;
+}
+
+// ─── Find best table suggestion for a reservation ───
+// Returns: {tableId, score, zoneType, tableLbl, reason} | null
+function suggestTable(res, v){
+  const vn=v||venue;
+  const layout=getLayout(vn);
+  if(!layout?.tables) return null;
+
+  const prof=guestProfiles[String(res.room)]||{};
+  const preferred=getPreferredZones(res,prof);
+
+  // Score all tables
+  const scored=layout.tables
+    .map(t=>({tableId:t.id,score:scoreTable(t.id,res,prof,vn),t}))
+    .filter(x=>x.score>-900)
+    .sort((a,b)=>b.score-a.score);
+
+  if(!scored.length) return null;
+
+  const best=scored[0];
+  const zt=getZoneType(vn,best.t.sec);
+  const prefIdx=preferred.indexOf(zt);
+
+  return {
+    tableId:best.tableId,
+    score:best.score,
+    tableLbl:best.t.l,
+    zoneType:zt,
+    zoneLabel:ZONE_LABELS[zt]||zt,
+    zoneIcon:ZONE_ICONS[zt]||'📍',
+    reason:prefIdx===0?'Best match':prefIdx>0?'Good match':'Available',
+    alternatives:scored.slice(1,3).map(x=>({tableId:x.tableId,lbl:x.t.l,zone:getZoneType(vn,x.t.sec)}))
+  };
+}
+
+// ─── Check availability status for a reservation ───
+// Returns: 'assigned' | 'ok' | 'warn' | 'none'
+function checkAvailability(res){
+  if(res.tableId){
+    const st=tStates[`${venue}_${res.tableId}`];
+    if(st&&st.status!=='free') return 'assigned';
+    return 'assigned';
+  }
+  const suggestion=suggestTable(res,venue);
+  if(!suggestion) return 'none';
+  if(suggestion.score>=50) return 'ok';
+  if(suggestion.score>=20) return 'warn';
+  return 'none';
+}
+
+// ─── Auto-allocate all unassigned reservations ───
+function autoAllocateAll(){
+  const unassigned=reservations.filter(r=>r.venue===venue&&r.mealPeriod===mealPeriod&&!r.tableId);
+  if(!unassigned.length){toast('No unassigned reservations','info');return;}
+
+  let assigned=0, skipped=0;
+  // Sort by strictest zone requirement first (VIP → family → others)
+  const priority=['vip','family','adults','any'];
+  const sorted=[...unassigned].sort((a,b)=>{
+    const pa=getPreferredZones(a,guestProfiles[String(a.room)]||{});
+    const pb=getPreferredZones(b,guestProfiles[String(b.room)]||{});
+    return priority.indexOf(pa[0])-priority.indexOf(pb[0]);
+  });
+
+  sorted.forEach(res=>{
+    const s=suggestTable(res,venue);
+    if(s&&s.score>0){
+      res.tableId=s.tableId;
+      tStates[`${venue}_${s.tableId}`]={status:'reserved',reservation:res.id};
+      assigned++;
+    } else {
+      skipped++;
+    }
+  });
+  save();renderMap(venue);renderRes();updateStats();
+  toast(`⚡ Auto-allocated: ${assigned} tables${skipped?' · '+skipped+' no match':''}`,assigned?'suc':'wrn');
+}
+
+// ─── Apply suggestion from right panel ───
+let suggestedTableId=null;
+function applySuggestion(resId){
+  const res=reservations.find(r=>r.id===resId);
+  if(!res||!suggestedTableId) return;
+  res.tableId=suggestedTableId;
+  tStates[`${venue}_${suggestedTableId}`]={status:'reserved',reservation:res.id};
+  // Highlight on map
+  document.querySelectorAll('.te').forEach(e=>e.classList.remove('suggested'));
+  save();renderMap(venue);renderRes();updateStats();
+  toast('Table T'+getTblLabel(suggestedTableId)+' assigned ✓','suc');
+  suggestedTableId=null;
+  if(res.tableId) showGC(res.tableId);
+}
+
+function highlightSuggestion(tableId){
+  suggestedTableId=tableId;
+  document.querySelectorAll('.te').forEach(e=>e.classList.remove('suggested'));
+  const el=document.getElementById('t_'+tableId);
+  if(el) el.classList.add('suggested');
+}
+
+// ═══ Patch showGC to include suggestion ═══
+const _origShowGC=showGC;
+function showGC(id){
+  _origShowGC(id);
+  // After rendering, check if unassigned and add suggestion
+  const st=tStates[`${venue}_${id}`]||{};
+  const res=reservations.find(r=>r.id===st.reservation||r.tableId===id);
+  if(!res||res.tableId) return; // already assigned or no res
+  const snw=document.getElementById('seatNowWrapper');
+  if(!snw) return;
+  const prof=guestProfiles[String(res.room)]||{};
+  const s=suggestTable(res,venue);
+  if(s){
+    const altHtml=s.alternatives.length
+      ?`<div style="font-size:9px;color:var(--muted);margin-top:4px">Alt: ${s.alternatives.map(a=>`T${a.lbl} (${ZONE_ICONS[a.zone]||''})`).join(' · ')}</div>`:'';
+    snw.innerHTML=`
+      <div class="suggest-btn" onclick="highlightSuggestion('${s.tableId}')">
+        ${s.zoneIcon} Suggested: T${s.tableLbl} · ${s.zoneLabel}
+      </div>
+      <div style="padding:0 12px 6px;display:flex;gap:5px">
+        <button onclick="applySuggestion('${res.id}')"
+          style="flex:1;padding:6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);
+          color:#4ade80;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--bf)">
+          ✓ Assign T${s.tableLbl}
+        </button>
+        <button onclick="enterSeatMode('${res.id}')"
+          style="flex:1;padding:6px;background:var(--bg3);border:1px solid var(--border2);
+          color:var(--text2);border-radius:6px;font-size:10px;cursor:pointer;font-family:var(--bf)">
+          🪑 Manual Seat
+        </button>
+      </div>
+      ${altHtml?'<div style="padding:0 12px 4px">'+altHtml+'</div>':''}
+    `;
+  }
+}
+
+// ═══ Patch renderRes to include availability badges ═══
+
+// ─── Start ───
+init();
+</script>
+</body>
+</html>
