@@ -940,8 +940,40 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
     <!-- EDITOR PROPERTIES PANEL (shown in edit mode) -->
     <div id="editPropsPanel" style="display:none;flex:1;overflow-y:auto;padding:12px">
       <div class="gcst" style="margin-bottom:10px">Table Properties</div>
-      <div id="editNoSel" style="color:var(--muted);font-size:11px;text-align:center;padding:20px">
-        Select a table or zone to edit
+      <div id="editNoSel" style="font-size:11px;padding:10px;overflow-y:auto">
+        <div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-size:9px;color:var(--gold);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:700">⚡ Quick Add Table</div>
+          <div style="display:flex;gap:5px;margin-bottom:5px">
+            <input id="qaNum" type="number" min="1" max="999" placeholder="Table #" class="fi" style="flex:1;font-size:14px;font-weight:700;text-align:center;padding:6px"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();quickAddTable()}">
+            <select id="qaShape" class="fi" style="width:56px;padding:5px;font-size:11px;text-align:center">
+              <option value="r">⬛ Sq</option>
+              <option value="c">⬤ Rnd</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:5px;margin-bottom:6px">
+            <select id="qaSection" class="fi" style="flex:1;font-size:10px;padding:5px"></select>
+            <input id="qaCap" type="number" min="1" max="20" value="4" class="fi" style="width:44px;font-size:11px;text-align:center;padding:5px" title="Capacity (pax)">
+          </div>
+          <button onclick="quickAddTable()" style="width:100%;padding:7px;background:var(--teal);border:1px solid var(--teal2);color:#fff;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;font-family:var(--bf)">+ Add Table</button>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-size:9px;color:var(--gold);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:700">📦 Add Range (π.χ. 71→74)</div>
+          <div style="display:flex;gap:4px;align-items:center;margin-bottom:5px">
+            <input id="qaFrom" type="number" min="1" max="999" placeholder="Από" class="fi" style="flex:1;font-size:12px;text-align:center;padding:5px">
+            <span style="color:var(--muted);font-size:12px">→</span>
+            <input id="qaTo" type="number" min="1" max="999" placeholder="Έως" class="fi" style="flex:1;font-size:12px;text-align:center;padding:5px">
+          </div>
+          <div style="display:flex;gap:5px;margin-bottom:6px">
+            <select id="qaRangeShape" class="fi" style="width:66px;padding:5px;font-size:10px">
+              <option value="r">⬛ Square</option>
+              <option value="c">⬤ Round</option>
+            </select>
+            <select id="qaRangeSection" class="fi" style="flex:1;font-size:10px;padding:5px"></select>
+          </div>
+          <button onclick="quickAddRange()" style="width:100%;padding:7px;background:rgba(226,176,74,.12);border:1px solid var(--goldb);color:var(--gold2);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;font-family:var(--bf)">+ Add Range</button>
+        </div>
+        <div style="font-size:9px;color:var(--muted);text-align:center">💡 Or select ⬛/⬤ tool and click anywhere on the floor map</div>
       </div>
       <div id="editSelProps" style="display:none">
         <div class="fg"><label class="fl">Table #</label>
@@ -2157,6 +2189,7 @@ function enterEditMode(){
   document.getElementById('rp').classList.remove('col');
 
   renderEditMap();
+  populateSectionDropdowns();
   toast('Layout Editor — drag tables, add new ones, resize','info');
 }
 
@@ -2251,20 +2284,26 @@ function renderResizeHandles(type, elId){
 
 function attachFmapHandlers(){
   const fmap=document.getElementById('fmap');
-  // Remove old handlers, add new
+  const fc=document.getElementById('fc');
   fmap.onmousedown=fmapBgMD;
+  // Also attach to fc so clicks in empty space work
+  fc.onmousedown=(e)=>{if(e.target===fc)fmapBgMD(e);};
 }
 
 // ─── Background click on fmap (for placing new tables / zones) ───
 function fmapBgMD(e){
-  if(e.target!==document.getElementById('fmap')) return; // not on background
   if(!editMode) return;
+  // Allow clicks on fmap itself OR on the fc container (when fmap is absolute)
+  const fmap=document.getElementById('fmap');
+  const fc=document.getElementById('fc');
+  const isBackground=e.target===fmap||e.target===fc;
+
   if(editTool==='square'||editTool==='round'){
-    placeNewTable(e);
+    placeNewTable(e); // works anywhere in editor mode
   } else if(editTool==='zone'){
     startZoneDraw(e);
-  } else {
-    // Deselect
+  } else if(isBackground){
+    // Deselect only when clicking background
     editSelId=null; editSelType=null;
     renderEditMap();
     showEditProps();
@@ -2273,9 +2312,13 @@ function fmapBgMD(e){
 
 // ─── TABLE DRAG ───
 function editTableMD(e, tid){
-  e.stopPropagation();
   if(e.target.classList.contains('resize-handle')) return;
-  if(editTool==='square'||editTool==='round'||editTool==='zone') return;
+  // In add/zone mode: let click bubble to fmap so placeNewTable fires
+  if(editTool==='square'||editTool==='round'||editTool==='zone'){
+    placeNewTable(e); // place at the clicked position (even if on a table)
+    return;
+  }
+  e.stopPropagation(); // only block bubble in move mode
 
   // Select
   editSelId=tid; editSelType='table';
@@ -2299,9 +2342,14 @@ function editTableMD(e, tid){
 }
 
 function editZoneMD(e, zid){
-  e.stopPropagation();
   if(e.target.classList.contains('resize-handle')) return;
+  // In add mode: pass through to fmap to place table
+  if(editTool==='square'||editTool==='round'){
+    placeNewTable(e);
+    return;
+  }
   if(editTool!=='move') return;
+  e.stopPropagation();
 
   editSelId=zid; editSelType='zone';
   renderEditMap();
@@ -2396,8 +2444,7 @@ function onEditorMouseMove(e){
       el.style.width=sec.w+'%';el.style.height=sec.h+'%';
     }
   } else if(dragSt.type==='draw-zone'&&zoneGhost){
-    const fc=document.getElementById('fc');
-    const rect=fc.getBoundingClientRect();
+    const rect=document.getElementById('fmap').getBoundingClientRect();
     const cx=Math.min(Math.max(0,((e.clientX-rect.left)/rect.width)*100),100);
     const cy=Math.min(Math.max(0,((e.clientY-rect.top)/rect.height)*100),100);
     const x=Math.min(dragSt.startPct.x,cx);
@@ -2448,33 +2495,127 @@ function onEditorMouseUp(){
 
 // ─── PLACE NEW TABLE ───
 function placeNewTable(e){
-  const fc=document.getElementById('fc');
-  const rect=fc.getBoundingClientRect();
-  const x=((e.clientX-rect.left)/rect.width)*100;
-  const y=((e.clientY-rect.top)/rect.height)*100;
+  const fmap=document.getElementById('fmap');
+  const rect=fmap.getBoundingClientRect();
+  // Clamp to fmap bounds
+  const x=Math.max(1,Math.min(94,((e.clientX-rect.left)/rect.width)*100));
+  const y=Math.max(1,Math.min(90,((e.clientY-rect.top)/rect.height)*100));
   const layout=customLayouts[venue];
-  const shape=editTool; // 'square' | 'round'
+  if(!layout){toast('No layout — enter editor first','wrn');return;}
+  const shape=editTool==='round'?'c':'r';
   const id='new_'+Date.now()+'_'+editIdCounter++;
-  // Find max table label
   const nums=layout.tables.map(t=>parseInt(t.l)||0);
   const nextNum=(nums.length?Math.max(...nums):0)+1;
   layout.tables.push({
-    id,l:String(nextNum),x:Math.min(97,x),y:Math.min(97,y),
-    w:6,h:9.3, // h stored as logical (displayed *1.55)
-    s:shape==='round'?'c':'r',cap:4,sec:'outdoor'
+    id, l:String(nextNum), x, y,
+    w:7, h:10,
+    s:shape, cap:4, sec:'outdoor'
   });
   editSelId=id; editSelType='table';
   pushUndo();
   triggerAutoSave();
   renderEditMap();
   showEditProps();
-  toast('Table '+nextNum+' added — drag to position','suc');
+  toast((shape==='c'?'⬤':'⬛')+' Table '+nextNum+' added','suc');
 }
 
-// ─── DRAW ZONE ───
+// Populate section dropdowns in Quick Add panel
+function populateSectionDropdowns(){
+  const layout=customLayouts[venue]||VD[venue];
+  if(!layout) return;
+  const opts=(layout.sections||[]).map(s=>`<option value="${s.id}">${s.label}</option>`).join('');
+  const qa=document.getElementById('qaSection');
+  const qar=document.getElementById('qaRangeSection');
+  if(qa) qa.innerHTML=opts;
+  if(qar) qar.innerHTML=opts;
+}
+
+// Quick add single table by number
+function quickAddTable(){
+  const numEl=document.getElementById('qaNum');
+  const num=parseInt(numEl?.value);
+  if(!num||num<1){toast('Enter a table number first','wrn');return;}
+  const shape=document.getElementById('qaShape')?.value||'r';
+  const sec=document.getElementById('qaSection')?.value||'outdoor';
+  const cap=parseInt(document.getElementById('qaCap')?.value)||4;
+  const layout=customLayouts[venue];
+  if(!layout){toast('Enter edit mode first','wrn');return;}
+  // Check if number already exists
+  if(layout.tables.find(t=>t.l===String(num))){
+    toast('Table '+num+' already exists!','wrn');return;
+  }
+  // Place in a smart position (avoid stacking)
+  const count=layout.tables.length;
+  const col=count%7; const row=Math.floor(count/7);
+  const id='new_'+Date.now()+'_'+editIdCounter++;
+  layout.tables.push({id,l:String(num),x:8+col*13,y:15+row*18,w:7,h:10,s:shape,cap,sec});
+  editSelId=id; editSelType='table';
+  pushUndo(); triggerAutoSave(); renderEditMap(); showEditProps();
+  // Scroll to the new table
+  setTimeout(()=>{
+    const el=document.getElementById('t_'+id);
+    if(el) el.scrollIntoView({block:'nearest',behavior:'smooth'});
+  },100);
+  numEl.value=''; numEl.focus();
+  toast('Table '+num+' added','suc');
+}
+
+// Quick add a range of tables (e.g. 71 → 74)
+function quickAddRange(){
+  const from=parseInt(document.getElementById('qaFrom')?.value);
+  const to=parseInt(document.getElementById('qaTo')?.value);
+  if(!from||!to||from>to){toast('Enter valid range (From ≤ To)','wrn');return;}
+  if(to-from>20){toast('Max 20 tables per range','wrn');return;}
+  const shape=document.getElementById('qaRangeShape')?.value||'r';
+  const sec=document.getElementById('qaRangeSection')?.value||'outdoor';
+  const layout=customLayouts[venue];
+  if(!layout){toast('Enter edit mode first','wrn');return;}
+  let added=0, skipped=0;
+  pushUndo();
+  for(let n=from;n<=to;n++){
+    if(layout.tables.find(t=>t.l===String(n))){skipped++;continue;}
+    const count=layout.tables.length;
+    const col=(n-from)%6; const row=Math.floor((n-from)/6);
+    const id='new_'+Date.now()+'_'+n+'_'+editIdCounter++;
+    layout.tables.push({id,l:String(n),x:8+col*14,y:20+row*18,w:7,h:10,s:shape,cap:4,sec});
+    added++;
+  }
+  triggerAutoSave(); renderEditMap();
+  editSelId=null; editSelType=null; showEditProps();
+  document.getElementById('qaFrom').value='';
+  document.getElementById('qaTo').value='';
+  toast(`✓ Added ${added} tables${skipped?' ('+skipped+' skipped — already exist)':''}`, added?'suc':'wrn');
+}
+
+
+  const layout=customLayouts[venue];
+  if(!layout){
+    if(!customLayouts[venue]) customLayouts[venue]=JSON.parse(JSON.stringify(VD[venue]||{sections:[],tables:[]}));
+  }
+  const lyt=customLayouts[venue];
+  const nums=lyt.tables.map(t=>parseInt(t.l)||0);
+  const nextNum=(nums.length?Math.max(...nums):0)+1;
+  // Place in a grid pattern to avoid stacking
+  const count=lyt.tables.length;
+  const cols=6;
+  const col=count%cols;
+  const row=Math.floor(count/cols);
+  const x=10+col*14;
+  const y=20+row*20;
+  const id='new_'+Date.now()+'_'+editIdCounter++;
+  lyt.tables.push({id,l:String(nextNum),x:Math.min(x,88),y:Math.min(y,85),w:7,h:10,s:shape,cap:4,sec:'outdoor'});
+  editSelId=id; editSelType='table';
+  pushUndo();
+  triggerAutoSave();
+  renderEditMap();
+  showEditProps();
+  // Scroll map to show the new table
+  const el=document.getElementById('t_'+id);
+  if(el) el.scrollIntoView({block:'center',behavior:'smooth'});
+  toast((shape==='c'?'⬤ Round':'⬛ Square')+' table '+nextNum+' added','suc');
+}
 function startZoneDraw(e){
-  const fc=document.getElementById('fc');
-  const rect=fc.getBoundingClientRect();
+  const rect=document.getElementById('fmap').getBoundingClientRect();
   const x=((e.clientX-rect.left)/rect.width)*100;
   const y=((e.clientY-rect.top)/rect.height)*100;
 
@@ -2535,6 +2676,7 @@ function showEditProps(){
   if(!editSelId){
     noSel.style.display='';selProps.style.display='none';
     if(deleteBtn) deleteBtn.disabled=true;
+    populateSectionDropdowns();
     return;
   }
   noSel.style.display='none';selProps.style.display='';
