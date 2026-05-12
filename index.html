@@ -2588,10 +2588,9 @@ function quickAddRange(){
 }
 
 
-  const layout=customLayouts[venue];
-  if(!layout){
-    if(!customLayouts[venue]) customLayouts[venue]=JSON.parse(JSON.stringify(VD[venue]||{sections:[],tables:[]}));
-  }
+
+function addTableAtCenter(shape){
+  if(!customLayouts[venue]) customLayouts[venue]=JSON.parse(JSON.stringify(VD[venue]||{sections:[],tables:[]}));
   const lyt=customLayouts[venue];
   const nums=lyt.tables.map(t=>parseInt(t.l)||0);
   const nextNum=(nums.length?Math.max(...nums):0)+1;
