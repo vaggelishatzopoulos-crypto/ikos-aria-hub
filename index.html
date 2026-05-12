@@ -55,45 +55,57 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
 
 /* ═══ NAV ═══ */
 .nav{
-  height:54px;background:var(--bg2);
+  background:var(--bg2);
   border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 14px;gap:0;flex-shrink:0;
+  display:flex;flex-direction:column;flex-shrink:0;
   box-shadow:0 2px 12px rgba(0,0,0,.3)
 }
-.logo{font-family:var(--hf);font-size:18px;color:var(--gold);letter-spacing:.05em;
-  margin-right:18px;white-space:nowrap;flex-shrink:0}
-.logo sup{color:var(--teal2);font-size:10px;vertical-align:super;font-family:var(--bf);font-weight:600}
-.vtabs{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none;min-width:0}
-.vtabs::-webkit-scrollbar{display:none}
+.nav-row1{
+  height:46px;display:flex;align-items:center;
+  padding:0 10px;gap:6px;
+  border-bottom:1px solid rgba(226,176,74,0.08)
+}
+.nav-row2{
+  height:34px;display:flex;align-items:stretch;
+  padding:0 8px;overflow-x:auto;scrollbar-width:none;gap:2px
+}
+.nav-row2::-webkit-scrollbar{display:none}
+
+.logo{font-family:var(--hf);font-size:16px;color:var(--gold);letter-spacing:.05em;
+  margin-right:10px;white-space:nowrap;flex-shrink:0}
+.logo sup{color:var(--teal2);font-size:9px;vertical-align:super;font-family:var(--bf);font-weight:600}
+
+/* Venue tabs now live in row2 */
+.vtabs{display:contents} /* children go directly into nav-row2 */
 .vtab{
-  padding:6px 12px;font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;
-  border-radius:6px 6px 0 0;border:1px solid transparent;border-bottom:none;
+  padding:4px 10px;font-size:10px;font-weight:500;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;
   transition:all .15s;white-space:nowrap;letter-spacing:.03em;
-  position:relative;top:1px;flex-shrink:0
+  flex-shrink:0;display:flex;align-items:center;position:relative
 }
 .vtab:hover{color:var(--text2);background:rgba(255,255,255,.04)}
 .vtab.active{
-  color:var(--gold);background:var(--bg);border-color:var(--border);
-  border-bottom-color:var(--bg)
+  color:var(--gold);border-bottom-color:var(--gold);
+  background:rgba(226,176,74,0.06)
 }
 .vtab.dineout{color:#a78bfa}
-.vtab.dineout.active{color:#c4b5fd;background:var(--bg);border-color:rgba(167,139,250,.3);border-bottom-color:var(--bg)}
+.vtab.dineout.active{color:#c4b5fd;border-bottom-color:#a78bfa;background:rgba(167,139,250,.06)}
 .vbadge{
   display:inline-block;background:var(--teal);color:#fff;
-  font-size:8px;font-weight:700;padding:1px 4px;border-radius:8px;
-  margin-left:4px;vertical-align:middle;line-height:1.4
+  font-size:7px;font-weight:700;padding:1px 3px;border-radius:8px;
+  margin-left:3px;vertical-align:middle;line-height:1.4
 }
 
 /* NAV RIGHT */
-.nav-r{display:flex;align-items:center;gap:6px;margin-left:auto;padding-left:10px;flex-shrink:0}
+.nav-r{display:flex;align-items:center;gap:5px;margin-left:auto;flex-shrink:0;flex-wrap:nowrap}
 
 .meal-pill{
-  display:flex;gap:2px;background:var(--bg3);
-  border:1px solid var(--border2);border-radius:10px;padding:3px
+  display:flex;gap:1px;background:var(--bg3);
+  border:1px solid var(--border2);border-radius:8px;padding:2px
 }
 .mpill{
-  padding:4px 10px;font-size:10px;font-weight:600;color:var(--muted);
-  cursor:pointer;border-radius:7px;transition:all .15s;white-space:nowrap
+  padding:3px 7px;font-size:10px;font-weight:600;color:var(--muted);
+  cursor:pointer;border-radius:6px;transition:all .15s;white-space:nowrap
 }
 .mpill:hover{color:var(--text2)}
 .mpill.active{background:var(--gold);color:#111;font-weight:700}
@@ -102,10 +114,10 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
 .mpill.active.dn{background:var(--gold);color:#1a1000}
 
 .navbtn{
-  display:flex;align-items:center;gap:5px;
+  display:flex;align-items:center;gap:4px;
   background:var(--bg3);border:1px solid var(--border2);
-  color:var(--text2);padding:5px 11px;border-radius:7px;
-  font-size:11px;font-weight:500;cursor:pointer;
+  color:var(--text2);padding:4px 9px;border-radius:6px;
+  font-size:10px;font-weight:500;cursor:pointer;
   font-family:var(--bf);transition:all .15s;white-space:nowrap
 }
 .navbtn:hover{border-color:var(--goldb);color:var(--gold)}
@@ -115,22 +127,24 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
 .navbtn.walkin:hover{background:rgba(59,130,246,.12)}
 .navbtn.search{border-color:rgba(167,139,250,.4);color:#a78bfa}
 .navbtn.search:hover{background:rgba(139,92,246,.1)}
-.ndate{font-size:11px;color:var(--muted);white-space:nowrap}
+/* Hide label text on very small screens, keep emoji */
+.navbtn .btn-label{display:inline}
+@media(max-width:1100px){.navbtn .btn-label{display:none}}
+@media(max-width:1100px){.ndate{display:none}}
+.ndate{font-size:10px;color:var(--muted);white-space:nowrap}
 
 /* ═══ ALERT STRIP ═══ */
 .astrip{
-  height:30px;background:linear-gradient(90deg,rgba(239,68,68,.08),rgba(249,115,22,.06),rgba(168,85,247,.06));
+  height:28px;background:linear-gradient(90deg,rgba(239,68,68,.08),rgba(249,115,22,.06),rgba(168,85,247,.06));
   border-bottom:1px solid var(--border);display:flex;align-items:center;
-  padding:0 14px;gap:16px;overflow-x:auto;flex-shrink:0
+  padding:0 12px;gap:14px;overflow-x:auto;flex-shrink:0
 }
 .astrip-item{display:flex;align-items:center;gap:5px;font-size:10px;white-space:nowrap}
 .astrip-dot{width:6px;height:6px;border-radius:50%}
 .astrip-label{color:var(--muted)} .astrip-label strong{color:var(--text2)}
 
 /* ═══ LAYOUT ═══ */
-.layout{display:flex;height:calc(100vh - 54px);overflow:hidden}
-/* strip off if exists */
-.layout.with-strip{height:calc(100vh - 84px)}
+.layout{display:flex;height:calc(100vh - 80px);overflow:hidden}
 
 /* ═══ LEFT PANEL ═══ */
 .lp{
@@ -236,7 +250,21 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
 }
 
 .fc{flex:1;overflow:auto;background:#0d1520;position:relative}
-.fmap{position:relative;width:100%;height:100%;min-height:500px}
+.fmap{position:absolute;inset:0;min-height:400px}
+
+/* ═══ RESPONSIVE — tablet & small screens ═══ */
+@media(max-width:1024px){
+  .lp{width:200px}
+  .rp{width:200px}
+  .sn{font-size:15px}
+}
+@media(max-width:860px){
+  .lp{width:180px}
+  .ftb{padding:5px 8px;gap:5px}
+  .tbt{padding:3px 7px;font-size:9px}
+  .legend{display:none}
+  .tsep{display:none}
+}
 
 /* Sections */
 .zone{position:absolute;border-radius:4px;pointer-events:none}
@@ -789,31 +817,33 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
 
 <!-- NAV -->
 <div class="nav">
-  <div class="logo">Ikos Aria <sup>Hub v7</sup></div>
-  <div class="vtabs" id="vtabs"></div>
-  <div class="nav-r">
-    <div class="ndate" id="nd"></div>
-    <div class="sync-badge" id="syncBadge" title="Firebase sync status">
-      <div class="sync-dot offline" id="syncDot"></div>
-      <span id="syncLabel">Local</span>
+  <div class="nav-row1">
+    <div class="logo">Ikos Aria <sup>Hub v7</sup></div>
+    <div class="nav-r">
+      <div class="ndate" id="nd"></div>
+      <div class="sync-badge" id="syncBadge" title="Firebase sync status">
+        <div class="sync-dot offline" id="syncDot"></div>
+        <span id="syncLabel">Local</span>
+      </div>
+      <div class="meal-pill" id="mealPill">
+        <div class="mpill bk" data-m="breakfast" onclick="setMeal('breakfast')">🌅 B</div>
+        <div class="mpill ln" data-m="lunch" onclick="setMeal('lunch')">☀️ L</div>
+        <div class="mpill dn active" data-m="dinner" onclick="setMeal('dinner')">🌙 D</div>
+      </div>
+      <div class="user-chip" onclick="showUserMenu()" title="Logged in as">
+        <span id="chipIcon">👤</span>
+        <span class="role-name" id="chipRole">—</span>
+        <span class="venue-tag" id="chipVenue"></span>
+      </div>
+      <button class="navbtn search" onclick="openSearch()">🔍 <span class="btn-label">Find</span></button>
+      <button class="navbtn walkin" id="walkInBtn" onclick="openWalkIn()" style="display:none">🚶 <span class="btn-label">Walk-in</span></button>
+      <button class="navbtn accent" onclick="openImport()">⬆ <span class="btn-label">Import</span></button>
+      <button class="navbtn" onclick="openTpl()">📐 <span class="btn-label">Templates</span></button>
+      <button class="navbtn" onclick="doExport()">⬇ <span class="btn-label">Export</span></button>
+      <button class="navbtn" id="pinMgrBtn" onclick="openPinMgr()" style="display:none;border-color:rgba(251,191,36,.3);color:#fbbf24">🔐</button>
     </div>
-    <div class="user-chip" onclick="showUserMenu()" title="Logged in as">
-      <span id="chipIcon">👤</span>
-      <span class="role-name" id="chipRole">—</span>
-      <span class="venue-tag" id="chipVenue"></span>
-    </div>
-    <div class="meal-pill" id="mealPill">
-      <div class="mpill bk" data-m="breakfast" onclick="setMeal('breakfast')">🌅 Breakfast</div>
-      <div class="mpill ln" data-m="lunch" onclick="setMeal('lunch')">☀️ Lunch</div>
-      <div class="mpill dn active" data-m="dinner" onclick="setMeal('dinner')">🌙 Dinner</div>
-    </div>
-    <button class="navbtn search" onclick="openSearch()">🔍 Find Guest</button>
-    <button class="navbtn walkin" id="walkInBtn" onclick="openWalkIn()" style="display:none">🚶 Walk-in</button>
-    <button class="navbtn accent" onclick="openImport()">⬆ Import</button>
-    <button class="navbtn" onclick="openTpl()">📐 Templates</button>
-    <button class="navbtn" onclick="doExport()">⬇ Export</button>
-    <button class="navbtn" id="pinMgrBtn" onclick="openPinMgr()" style="display:none;border-color:rgba(251,191,36,.3);color:#fbbf24">🔐 PINs</button>
   </div>
+  <div class="nav-row2" id="vtabs"></div>
 </div>
 
 <!-- ALERT STRIP -->
@@ -1601,8 +1631,13 @@ function updateAlertStrip(){
   const total=reservations.length;
   const strip=document.getElementById('astrip');
   const content=document.getElementById('astripContent');
-  if(!alg&&!att&&!sp&&!total){strip.style.display='none';return;}
+  if(!alg&&!att&&!sp&&!total){
+    strip.style.display='none';
+    document.getElementById('mainLayout').style.height='calc(100vh - 80px)';
+    return;
+  }
   strip.style.display='block';
+  document.getElementById('mainLayout').style.height='calc(100vh - 108px)';
   let h='';
   if(total) h+=`<div class="astrip-item"><div class="astrip-dot" style="background:var(--teal2)"></div><span class="astrip-label"><strong>${total}</strong> reservations loaded</span></div>`;
   if(alg) h+=`<div class="astrip-item"><div class="astrip-dot" style="background:var(--alg-t)"></div><span class="astrip-label"><strong>${alg}</strong> allergy guest${alg>1?'s':''}</span></div>`;
