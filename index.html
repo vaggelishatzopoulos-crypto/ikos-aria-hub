@@ -884,7 +884,9 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
           <button class="etb" id="toolZone" onclick="setEditTool('zone')" title="Draw zone area">▭ Add Zone</button>
         </div>
         <div class="edit-sep"></div>
+        <button class="etb" id="undoBtn" onclick="editorUndo()" disabled title="Undo last action (Ctrl+Z)" style="opacity:.35">↩ Undo</button>
         <button class="etb red" id="deleteBtn" onclick="editDeleteSelected()" disabled title="Delete selected">🗑 Delete</button>
+        <span id="autoSaveInd" style="font-size:9px;color:var(--muted);margin-left:4px">Auto-save on</span>
       </div>
       <div class="edit-toolbar-right">
         <button class="etb orange" onclick="resetToDefault()">↺ Reset to Default</button>
@@ -1980,6 +1982,52 @@ let editIdCounter=1000;    // for generating new element IDs
 let dragSt=null; // {type:'move'|'resize'|'zone', ...}
 let zoneGhost=null; // live ghost div during zone draw
 
+// ─── Undo history ───
+let undoStack=[];       // array of JSON snapshots
+const UNDO_MAX=30;      // keep last 30 states
+let autoSaveTimer=null; // debounced auto-save
+
+// Push current layout state to undo stack
+function pushUndo(){
+  if(!customLayouts[venue]) return;
+  undoStack.push(JSON.stringify(customLayouts[venue]));
+  if(undoStack.length>UNDO_MAX) undoStack.shift();
+  updateUndoBtn();
+}
+
+// Undo last action
+function editorUndo(){
+  if(!undoStack.length){toast('Nothing to undo','wrn');return;}
+  customLayouts[venue]=JSON.parse(undoStack.pop());
+  triggerAutoSave();
+  renderEditMap();
+  showEditProps();
+  updateUndoBtn();
+  toast('Undo ✓','info');
+}
+
+function updateUndoBtn(){
+  const btn=document.getElementById('undoBtn');
+  if(btn){
+    btn.disabled=!undoStack.length;
+    btn.style.opacity=undoStack.length?'1':'0.35';
+  }
+}
+
+// Auto-save to localStorage + Firebase after any edit
+function triggerAutoSave(){
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(()=>{
+    save(); // persists to localStorage + Firebase
+    const ind=document.getElementById('autoSaveInd');
+    if(ind){
+      ind.textContent='✓ Saved';
+      ind.style.color='var(--free-t)';
+      setTimeout(()=>{if(ind)ind.textContent='Auto-save on';ind.style.color='var(--muted)';},2000);
+    }
+  },800); // 800ms debounce after last action
+}
+
 // ─── Get active layout (custom if exists, else default VD) ───
 function getLayout(v){
   return customLayouts[v]?customLayouts[v]:VD[v];
@@ -2001,6 +2049,19 @@ function enterEditMode(){
   editTool='move';
   editSelId=null;
   editSelType=null;
+  undoStack=[];        // fresh undo history for this session
+  updateUndoBtn();
+
+  // Keyboard shortcuts: Ctrl+Z = undo, Delete/Backspace = delete selected, Escape = exit
+  window._editorKeyHandler=e=>{
+    if(!editMode) return;
+    if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();editorUndo();}
+    if((e.key==='Delete'||e.key==='Backspace')&&editSelId&&document.activeElement===document.body){
+      e.preventDefault();editDeleteSelected();
+    }
+    if(e.key==='Escape'){exitEditMode();}
+  };
+  document.addEventListener('keydown',window._editorKeyHandler);
 
   // Init custom layout if needed (clone from default or keep existing)
   if(!customLayouts[venue]) customLayouts[venue]=cloneLayout(venue);
@@ -2027,6 +2088,18 @@ function exitEditMode(){
   editTool='move';
   editSelId=null;
   dragSt=null;
+  undoStack=[];
+  clearTimeout(autoSaveTimer);
+
+  // Remove keyboard handler
+  if(window._editorKeyHandler){
+    document.removeEventListener('keydown',window._editorKeyHandler);
+    window._editorKeyHandler=null;
+  }
+  // Clean up any stuck mouse listeners
+  window.removeEventListener('mousemove',onEditorMouseMove);
+  window.removeEventListener('mouseup',onEditorMouseUp);
+
   if(zoneGhost){zoneGhost.remove();zoneGhost=null;}
 
   // Restore UI
@@ -2145,7 +2218,7 @@ function editTableMD(e, tid){
     cw:rect.width, ch:rect.height
   };
   window.addEventListener('mousemove',onEditorMouseMove,{passive:true});
-  window.addEventListener('mouseup',onEditorMouseUp,{once:true});
+  window.addEventListener('mouseup',onEditorMouseUp);
 }
 
 function editZoneMD(e, zid){
@@ -2170,7 +2243,7 @@ function editZoneMD(e, zid){
     cw:rect.width, ch:rect.height
   };
   window.addEventListener('mousemove',onEditorMouseMove,{passive:true});
-  window.addEventListener('mouseup',onEditorMouseUp,{once:true});
+  window.addEventListener('mouseup',onEditorMouseUp);
 }
 
 // ─── RESIZE ───
@@ -2201,7 +2274,7 @@ function resizeMD(e, elId, handle){
     };
   }
   window.addEventListener('mousemove',onEditorMouseMove,{passive:true});
-  window.addEventListener('mouseup',onEditorMouseUp,{once:true});
+  window.addEventListener('mouseup',onEditorMouseUp);
 }
 
 // ─── GLOBAL MOUSE MOVE / UP ───
@@ -2280,9 +2353,16 @@ function applyResize(obj,ds,dx,dy,type){
 }
 
 function onEditorMouseUp(){
+  // Always clean up BOTH listeners to prevent freeze on rapid moves
   window.removeEventListener('mousemove',onEditorMouseMove);
+  window.removeEventListener('mouseup',onEditorMouseUp);
+
   if(dragSt?.type==='draw-zone'){
     finalizeZone();
+  } else if(dragSt){
+    // Push undo snapshot after every move/resize
+    pushUndo();
+    triggerAutoSave();
   }
   dragSt=null;
   renderEditMap();
@@ -2307,6 +2387,8 @@ function placeNewTable(e){
     s:shape==='round'?'c':'r',cap:4,sec:'outdoor'
   });
   editSelId=id; editSelType='table';
+  pushUndo();
+  triggerAutoSave();
   renderEditMap();
   showEditProps();
   toast('Table '+nextNum+' added — drag to position','suc');
@@ -2327,7 +2409,7 @@ function startZoneDraw(e){
 
   dragSt={type:'draw-zone',startPct:{x,y},endPct:{x,y,w:0,h:0},cw:rect.width,ch:rect.height};
   window.addEventListener('mousemove',onEditorMouseMove,{passive:true});
-  window.addEventListener('mouseup',onEditorMouseUp,{once:true});
+  window.addEventListener('mouseup',onEditorMouseUp);
 }
 
 function finalizeZone(){
@@ -2342,6 +2424,8 @@ function finalizeZone(){
   const id='zone_'+Date.now();
   layout.sections.push({id,label:name,x:ep.x,y:ep.y,w:ep.w,h:ep.h,color:col});
   editSelId=id;editSelType='zone';
+  pushUndo();
+  triggerAutoSave();
   renderEditMap();showEditProps();
   toast('Zone "'+name+'" added','suc');
 }
@@ -2349,6 +2433,7 @@ function finalizeZone(){
 // ─── DELETE SELECTED ───
 function editDeleteSelected(){
   if(!editSelId||!customLayouts[venue]) return;
+  pushUndo(); // save state before delete
   const layout=customLayouts[venue];
   if(editSelType==='table'){
     layout.tables=layout.tables.filter(t=>t.id!==editSelId);
@@ -2358,6 +2443,7 @@ function editDeleteSelected(){
     toast('Zone deleted','wrn');
   }
   editSelId=null;editSelType=null;
+  triggerAutoSave();
   renderEditMap();showEditProps();
 }
 
@@ -2405,19 +2491,21 @@ function showEditProps(){
 function updateEditProp(prop, val){
   if(!editSelId||editSelType!=='table') return;
   const t=customLayouts[venue]?.tables?.find(x=>x.id===editSelId);
-  if(t) t[prop]=val;
+  if(t){t[prop]=val; triggerAutoSave();}
 }
 function updateEditShape(s){
   if(!editSelId||editSelType!=='table') return;
   const t=customLayouts[venue]?.tables?.find(x=>x.id===editSelId);
   if(!t) return;
+  pushUndo();
   t.s=s;
+  triggerAutoSave();
   renderEditMap();showEditProps();
 }
 function updateZoneProp(prop, val){
   if(!editSelId||editSelType!=='zone') return;
   const sec=customLayouts[venue]?.sections?.find(x=>x.id===editSelId);
-  if(sec) sec[prop]=val;
+  if(sec){sec[prop]=val; triggerAutoSave();}
   if(prop==='color') renderEditMap();
 }
 
