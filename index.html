@@ -1122,6 +1122,14 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
       <div class="fl">Today's Alerts</div>
       <div id="alertsList" style="max-height:120px;overflow-y:auto;border:1px solid var(--border);border-radius:7px"></div>
     </div>
+
+    <!-- Re-import option -->
+    <div id="reimportRow" style="display:none;margin-top:10px;padding:8px 10px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:7px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;color:var(--text2)">
+        <input type="checkbox" id="forceReimportChk" style="width:14px;height:14px;accent-color:var(--gold)">
+        <span>🔄 <strong>Clear & re-import</strong> — replaces today's existing reservations (use for daily refresh)</span>
+      </label>
+    </div>
     <div class="ma">
       <button class="mb can" onclick="closeM('importMo')">Close</button>
       <button class="mb pri" id="applyImportBtn" onclick="applyImport()" style="display:none">✓ Apply to Hub</button>
@@ -1176,6 +1184,8 @@ function save(){
     localStorage.setItem('ih4_gp',JSON.stringify(guestProfiles));
     localStorage.setItem('ih5_cl',JSON.stringify(customLayouts));
   }catch(e){}
+  // Firebase sync (no recursion — called directly)
+  syncToFirebase();
 }
 
 // ─── Init ───
@@ -1896,6 +1906,7 @@ function showCSVResult(parsed){
   document.getElementById('csvStatus').innerHTML=`<div style="color:var(--free-t);font-size:10px;margin-top:4px">✓ ${parsed.length} reservations</div>`;
   document.getElementById('impRows').innerHTML=Object.entries(byVenue).map(([v,d])=>`<div class="imp-row"><span class="vn">${v}</span><span class="cv">${d.count}</span><span class="cv">${d.pax}</span><span class="cv">${mpIcon(d.period)}</span></div>`).join('');
   document.getElementById('importSummary').style.display='block';
+  document.getElementById('reimportRow').style.display='block';
   document.getElementById('applyImportBtn').style.display='';
 }
 
@@ -1947,23 +1958,54 @@ function showXLSXAlerts(profiles){
 }
 
 function applyImport(){
-  let added=0,skipped=0;
+  let added=0, updated=0, skipped=0;
+
   if(pendingImportCSV&&importedReservations.length){
+    const forceReimport=document.getElementById('forceReimportChk')?.checked;
+
+    if(forceReimport){
+      // Clear all existing reservations for the venues in the import
+      const importVenues=[...new Set(importedReservations.map(r=>r.venue))];
+      const importPeriods=[...new Set(importedReservations.map(r=>r.mealPeriod))];
+      reservations=reservations.filter(r=>
+        !importVenues.includes(r.venue)||!importPeriods.includes(r.mealPeriod)
+      );
+      toast('Cleared previous reservations for these venues','info');
+    }
+
     importedReservations.forEach(r=>{
       const prof=guestProfiles[String(r.room)]||{};
+      // Enrich flags from profile
       if(prof.allergy&&!r.flags.includes('allergy'))r.flags.push('allergy');
       if(prof.attention&&!r.flags.includes('attention'))r.flags.push('attention');
       if(prof.repeater&&!r.flags.includes('returning'))r.flags.push('returning');
       if(prof.complainer&&!r.flags.includes('complainer'))r.flags.push('complainer');
-      if(prof.specialEvent){const e=prof.specialEvent.toLowerCase();if(e.includes('birth')&&!r.flags.includes('birthday'))r.flags.push('birthday');if(e.includes('ann')&&!r.flags.includes('anniversary'))r.flags.push('anniversary');}
-      const exists=reservations.find(x=>x.bookingId===r.bookingId&&x.venue===r.venue);
-      if(exists||!VENUES.includes(r.venue)){skipped++;return;}
-      reservations.push(r);added++;
+      if(prof.specialEvent){
+        const e=prof.specialEvent.toLowerCase();
+        if(e.includes('birth')&&!r.flags.includes('birthday'))r.flags.push('birthday');
+        if(e.includes('ann')&&!r.flags.includes('anniversary'))r.flags.push('anniversary');
+      }
+      if(!VENUES.includes(r.venue)){skipped++;return;}
+
+      // Check duplicate by bookingId + venue
+      const existsIdx=reservations.findIndex(x=>x.bookingId===r.bookingId&&x.venue===r.venue&&x.room===r.room);
+      if(existsIdx>-1){
+        // Update existing instead of skipping
+        reservations[existsIdx]={...reservations[existsIdx],...r};
+        updated++;
+      } else {
+        reservations.push(r);
+        added++;
+      }
     });
     pendingImportCSV=false;importedReservations=[];
   }
-  save();renderMap(venue);renderRes();buildTabs();updateStats();updateAlertStrip();
-  toast(`✓ ${added} reservations imported${skipped?' ('+skipped+' skipped)':''}`,added?'suc':'wrn');
+
+  save();
+  renderMap(venue);renderRes();buildTabs();updateStats();updateAlertStrip();
+
+  const msg=`✓ ${added} imported${updated?' · '+updated+' updated':''}${skipped?' · '+skipped+' skipped':''}`;
+  toast(msg, added+updated>0?'suc':'wrn');
   closeM('importMo');
 }
 
@@ -2873,13 +2915,6 @@ function syncToFirebase(){
       setSyncStatus('offline','Sync error');
     }
   },1000);
-}
-
-// ─── Patch save() to also sync ───
-const _origSave=save;
-function save(){
-  _origSave();
-  syncToFirebase();
 }
 
 // ══════════════════════════════════════════════════════════
