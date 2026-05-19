@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Ikos Aria — F&B Operations Hub v7</title>
+<title>Ikos Aria — F&B Operations Hub v8</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
@@ -765,7 +765,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box">
     <div class="login-logo">Ikos Aria</div>
-    <div class="login-sub">F&B Operations Hub · v6</div>
+    <div class="login-sub">F&B Operations Hub · v8</div>
 
     <div id="loginStep1">
       <div style="font-size:11px;color:var(--text2);margin-bottom:10px;font-weight:500">Select your venue / role:</div>
@@ -806,10 +806,10 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
 <div class="mo" id="pinMgrMo">
   <div class="md">
     <div class="mt">🔐 PIN Manager <button class="mt-close" onclick="closeM('pinMgrMo')">×</button></div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Only F&amp;B Manager can view or change PINs.</div>
+    <div id="pinMgrDesc" style="font-size:11px;color:var(--muted);margin-bottom:14px"></div>
     <div id="pinMgrList"></div>
     <div class="ma">
-      <button class="mb can" onclick="closeM('pinMgrMo')">Close</button>
+      <button class="mb can" onclick="closeM('pinMgrMo')">Cancel</button>
       <button class="mb pri" onclick="savePins()">💾 Save PINs</button>
     </div>
   </div>
@@ -818,7 +818,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
 <!-- NAV -->
 <div class="nav">
   <div class="nav-row1">
-    <div class="logo">Ikos Aria <sup>Hub v7</sup></div>
+    <div class="logo">Ikos Aria <sup>Hub v8</sup></div>
     <div class="nav-r">
       <div class="ndate" id="nd"></div>
       <div class="sync-badge" id="syncBadge" title="Firebase sync status">
@@ -840,7 +840,9 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
       <button class="navbtn accent" onclick="openImport()">⬆ <span class="btn-label">Import</span></button>
       <button class="navbtn" onclick="openTpl()">📐 <span class="btn-label">Templates</span></button>
       <button class="navbtn" onclick="doExport()">⬇ <span class="btn-label">Export</span></button>
-      <button class="navbtn" id="pinMgrBtn" onclick="openPinMgr()" style="display:none;border-color:rgba(251,191,36,.3);color:#fbbf24">🔐</button>
+      <button class="navbtn" onclick="openHistory()" style="border-color:rgba(96,165,250,.3);color:#60a5fa">📅 <span class="btn-label">History</span></button>
+      <button class="navbtn" onclick="endOfDayReset()" style="border-color:rgba(239,68,68,.3);color:#f87171">🌙 <span class="btn-label">EOD</span></button>
+      <button class="navbtn" id="pinMgrBtn" onclick="openPinMgr()" style="border-color:rgba(251,191,36,.3);color:#fbbf24">🔐</button>
     </div>
   </div>
   <div class="nav-row2" id="vtabs"></div>
@@ -1201,13 +1203,25 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
 
 <div class="toast" id="toast"></div>
 
+<!-- HISTORY MODAL -->
+<div class="mo" id="historyMo">
+  <div class="md wide">
+    <div class="mt">📅 Reservations History <button class="mt-close" onclick="closeM('historyMo')">×</button></div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Last 90 days — click a date for details. History is stored in Firebase permanently.</div>
+    <div id="historyContent" style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:7px"></div>
+    <div class="ma">
+      <button class="mb can" onclick="closeM('historyMo')">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════
 // VENUE DATA (same as v3)
 // ═══════════════════════════════════════════════════════
 const VD = {"Fresco":{"meta":{"total":54,"inside":19,"outside":35,"seats":154,"color":"#1a6b5a"},"sections":[{"id":"bar","label":"Bar","x":42,"y":0,"w":50,"h":22,"color":"rgba(100,60,150,0.12)"},{"id":"indoor","label":"Indoor","x":14,"y":0,"w":80,"h":54,"color":"rgba(30,70,130,0.12)"},{"id":"outdoor","label":"Outdoor","x":0,"y":54,"w":100,"h":46,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id":"bs1","l":"1","x":59,"y":12,"w":3.5,"h":5,"s":"c","cap":2,"sec":"bar"},{"id":"bs105","l":"105","x":63,"y":12,"w":3.5,"h":5,"s":"c","cap":2,"sec":"bar"},{"id":"bs104","l":"104","x":67,"y":12,"w":3.5,"h":5,"s":"c","cap":2,"sec":"bar"},{"id":"bs103","l":"103","x":71,"y":12,"w":3.5,"h":5,"s":"c","cap":2,"sec":"bar"},{"id":"bs102","l":"102","x":75,"y":12,"w":3.5,"h":5,"s":"c","cap":2,"sec":"bar"},{"id":"bs101","l":"101","x":79,"y":12,"w":3.5,"h":5,"s":"c","cap":2,"sec":"bar"},{"id":"bs6","l":"6","x":56,"y":17,"w":3,"h":4.5,"s":"c","cap":2,"sec":"bar"},{"id":"t205","l":"205","x":22,"y":21,"w":5,"h":7,"s":"r","cap":4,"sec":"indoor"},{"id":"t206","l":"206","x":22,"y":30,"w":5,"h":7,"s":"r","cap":4,"sec":"indoor"},{"id":"t207","l":"207","x":22,"y":39,"w":5,"h":7,"s":"r","cap":4,"sec":"indoor"},{"id":"t208","l":"208","x":22,"y":47,"w":5,"h":7,"s":"r","cap":4,"sec":"indoor"},{"id":"t203","l":"203","x":34,"y":22,"w":7,"h":10,"s":"c","cap":6,"sec":"indoor"},{"id":"t201","l":"201","x":43,"y":22,"w":7,"h":10,"s":"c","cap":6,"sec":"indoor"},{"id":"t204","l":"204","x":34,"y":40,"w":7,"h":9,"s":"r","cap":4,"sec":"indoor"},{"id":"t202","l":"202","x":43,"y":40,"w":7,"h":9,"s":"r","cap":4,"sec":"indoor"},{"id":"t110","l":"110","x":57,"y":26,"w":7,"h":10,"s":"c","cap":6,"sec":"indoor"},{"id":"t109","l":"109","x":65,"y":35,"w":7,"h":10,"s":"c","cap":6,"sec":"indoor"},{"id":"t107","l":"107","x":74,"y":24,"w":8,"h":12,"s":"c","cap":8,"sec":"indoor"},{"id":"t111","l":"111","x":57,"y":45,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"t108","l":"108","x":74,"y":45,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"t14","l":"14","x":90,"y":59,"w":4.5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"t11","l":"11","x":90,"y":68,"w":4.5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"t12","l":"12","x":90,"y":78,"w":4.5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"t13","l":"13","x":90,"y":88,"w":4.5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"t21","l":"21","x":79,"y":57,"w":5.5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"t22","l":"22","x":79,"y":70,"w":5.5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"t23","l":"23","x":79,"y":82,"w":5.5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"t24","l":"24","x":79,"y":92,"w":5.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"t31","l":"31","x":66,"y":57,"w":5.5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"t32","l":"32","x":66,"y":70,"w":5.5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"t33","l":"33","x":66,"y":82,"w":5.5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"t34","l":"34","x":66,"y":92,"w":7,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t41","l":"41","x":56,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t42","l":"42","x":56,"y":66,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t43","l":"43","x":56,"y":75,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t44","l":"44","x":56,"y":83,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t45","l":"45","x":56,"y":92,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t51","l":"51","x":48,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t52","l":"52","x":48,"y":66,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t53","l":"53","x":48,"y":75,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t54","l":"54","x":48,"y":83,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t55","l":"55","x":48,"y":92,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t56","l":"56","x":48,"y":99,"w":5,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"t46","l":"46","x":56,"y":99,"w":5,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"t61","l":"61","x":38,"y":71,"w":6,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"t62","l":"62","x":38,"y":87,"w":6,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"t71","l":"71","x":28,"y":56,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t72","l":"72","x":28,"y":65,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t73","l":"73","x":28,"y":74,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t74","l":"74","x":28,"y":83,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t75","l":"75","x":28,"y":92,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"t81","l":"81","x":15,"y":58,"w":7,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"t82","l":"82","x":15,"y":72,"w":7,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"t83","l":"83","x":15,"y":87,"w":7,"h":10,"s":"r","cap":6,"sec":"outdoor"}]},"Kos":{"meta":{"total":46,"inside":3,"outside":43,"seats":122,"color":"#1a5b7a"},"sections":[{"id":"indoor","label":"Indoor","x":42,"y":0,"w":58,"h":35,"color":"rgba(30,70,130,0.12)"},{"id":"outdoor","label":"Outdoor","x":0,"y":0,"w":42,"h":100,"color":"rgba(20,100,60,0.12)"},{"id":"outdoor2","label":"Outdoor","x":42,"y":35,"w":20,"h":65,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id":"k10","l":"10","x":65,"y":20,"w":4,"h":6,"s":"c","cap":2,"sec":"indoor"},{"id":"k11i","l":"11","x":72,"y":20,"w":4,"h":6,"s":"c","cap":2,"sec":"indoor"},{"id":"k12i","l":"12","x":79,"y":20,"w":4,"h":6,"s":"c","cap":2,"sec":"indoor"},{"id":"k84","l":"84","x":44,"y":28,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k83","l":"83","x":52,"y":28,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k82","l":"82","x":44,"y":44,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k81","l":"81","x":52,"y":44,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k77","l":"77","x":2,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k76","l":"76","x":8,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k75","l":"75","x":14,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k74","l":"74","x":20,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k73","l":"73","x":26,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k72","l":"72","x":32,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k71","l":"71","x":38,"y":5,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k66","l":"66","x":2,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k65","l":"65","x":9,"y":15,"w":8,"h":9,"s":"r","cap":6,"sec":"outdoor"},{"id":"k64","l":"64","x":20,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k63","l":"63","x":26,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k62","l":"62","x":32,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k61","l":"61","x":38,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k56","l":"56","x":2,"y":29,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k55","l":"55","x":8,"y":29,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k54","l":"54","x":14,"y":29,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k53","l":"53","x":21,"y":28,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k52","l":"52","x":29,"y":28,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k51","l":"51","x":37,"y":28,"w":5,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k43","l":"43","x":4,"y":40,"w":7,"h":10,"s":"c","cap":6,"sec":"outdoor"},{"id":"k42","l":"42","x":16,"y":40,"w":8,"h":9,"s":"r","cap":6,"sec":"outdoor"},{"id":"k41","l":"41","x":28,"y":40,"w":7,"h":10,"s":"c","cap":6,"sec":"outdoor"},{"id":"k35","l":"35","x":2,"y":55,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k34","l":"34","x":8,"y":55,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k33","l":"33","x":14,"y":55,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k32","l":"32","x":21,"y":54,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k31","l":"31","x":31,"y":54,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k26","l":"26","x":2,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k25","l":"25","x":8,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k24","l":"24","x":14,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k23","l":"23","x":21,"y":65,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k22","l":"22","x":31,"y":65,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"k21","l":"21","x":38,"y":65,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"k15","l":"15","x":2,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"k14","l":"14","x":9,"y":78,"w":6,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k13","l":"13","x":18,"y":78,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"k12","l":"12","x":26,"y":78,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"k11","l":"11","x":36,"y":78,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"}]},"Oliva":{"meta":{"total":34,"inside":12,"outside":22,"seats":104,"color":"#5a7a1a"},"sections":[{"id":"indoor","label":"Indoor","x":0,"y":0,"w":46,"h":100,"color":"rgba(30,70,130,0.12)"},{"id":"special","label":"Special","x":46,"y":0,"w":12,"h":80,"color":"rgba(100,60,20,0.12)"},{"id":"outdoor","label":"Outdoor","x":60,"y":0,"w":40,"h":100,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id":"o55","l":"55","x":5,"y":6,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o54","l":"54","x":14,"y":6,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o53","l":"53","x":23,"y":6,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o52","l":"52","x":32,"y":6,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o51","l":"51","x":41,"y":6,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o45","l":"45","x":5,"y":22,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o44","l":"44","x":14,"y":22,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o43","l":"43","x":23,"y":22,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o42","l":"42","x":32,"y":22,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o41","l":"41","x":41,"y":22,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o34","l":"34","x":5,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o33","l":"33","x":14,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o32","l":"32","x":23,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o31","l":"31","x":32,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o24","l":"24","x":5,"y":54,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o23","l":"23","x":14,"y":54,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o22","l":"22","x":23,"y":54,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o21","l":"21","x":32,"y":54,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o14","l":"14","x":5,"y":70,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o13","l":"13","x":14,"y":70,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o12","l":"12","x":23,"y":70,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o11","l":"11","x":32,"y":70,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"o83","l":"83","x":48,"y":20,"w":7,"h":8,"s":"r","cap":2,"sec":"special"},{"id":"o73","l":"73","x":48,"y":45,"w":7,"h":8,"s":"r","cap":2,"sec":"special"},{"id":"o72","l":"72","x":56,"y":52,"w":6,"h":7,"s":"r","cap":2,"sec":"special"},{"id":"o100","l":"100","x":58,"y":25,"w":8,"h":25,"s":"r","cap":16,"sec":"special"},{"id":"o91","l":"91","x":67,"y":5,"w":8,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"o81a","l":"81","x":75,"y":22,"w":10,"h":14,"s":"c","cap":8,"sec":"outdoor"},{"id":"o81b","l":"81","x":89,"y":22,"w":10,"h":14,"s":"c","cap":8,"sec":"outdoor"},{"id":"o71","l":"71","x":79,"y":48,"w":10,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"o64","l":"64","x":63,"y":80,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"o63","l":"63","x":72,"y":80,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"o62","l":"62","x":81,"y":80,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"o61","l":"61","x":90,"y":80,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"}]},"Anaya":{"meta":{"total":43,"inside":8,"outside":35,"seats":134,"color":"#7a4a1a"},"sections":[{"id":"indoor","label":"Indoor","x":60,"y":0,"w":40,"h":60,"color":"rgba(30,70,130,0.12)"},{"id":"outdoor","label":"Outdoor","x":0,"y":0,"w":60,"h":100,"color":"rgba(20,100,60,0.12)"},{"id":"outdoor2","label":"Outdoor","x":60,"y":60,"w":40,"h":40,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id":"a102","l":"102","x":71,"y":18,"w":12,"h":18,"s":"r","cap":8,"sec":"indoor"},{"id":"a101","l":"101","x":71,"y":44,"w":12,"h":18,"s":"r","cap":8,"sec":"indoor"},{"id":"a99","l":"99","x":61,"y":8,"w":6,"h":10,"s":"r","cap":4,"sec":"indoor"},{"id":"a98","l":"98","x":61,"y":26,"w":6,"h":10,"s":"r","cap":4,"sec":"indoor"},{"id":"a97","l":"97","x":61,"y":44,"w":6,"h":10,"s":"r","cap":4,"sec":"indoor"},{"id":"a96","l":"96","x":62,"y":75,"w":4.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a95","l":"95","x":68,"y":75,"w":4.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a94","l":"94","x":74,"y":75,"w":4.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a93","l":"93","x":80,"y":75,"w":4.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a92","l":"92","x":86,"y":75,"w":4.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a91","l":"91","x":92,"y":75,"w":4.5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a84","l":"84","x":2,"y":4,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a83","l":"83","x":8,"y":4,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a82","l":"82","x":14,"y":4,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a81","l":"81","x":20,"y":4,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a74","l":"74","x":2,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a73","l":"73","x":8,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a72","l":"72","x":14,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a71","l":"71","x":20,"y":16,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a53","l":"53","x":26,"y":3,"w":9,"h":12,"s":"r","cap":6,"sec":"outdoor"},{"id":"a64","l":"64","x":2,"y":28,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a63","l":"63","x":8,"y":28,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a62","l":"62","x":14,"y":28,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a61","l":"61","x":20,"y":28,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a52","l":"52","x":28,"y":20,"w":9,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"a51","l":"51","x":38,"y":20,"w":9,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"a53r","l":"5","x":4,"y":40,"w":7,"h":10,"s":"c","cap":6,"sec":"outdoor"},{"id":"a44","l":"44","x":2,"y":42,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a43","l":"43","x":8,"y":42,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a42","l":"42","x":14,"y":42,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a41","l":"41","x":20,"y":42,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a33","l":"33","x":6,"y":55,"w":6,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"a34","l":"34","x":2,"y":56,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a26","l":"26","x":2,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a25","l":"25","x":8,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a24","l":"24","x":14,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a23","l":"23","x":20,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a22","l":"22","x":26,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a21","l":"21","x":32,"y":66,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a16","l":"16","x":2,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a15","l":"15","x":8,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a14","l":"14","x":14,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a13","l":"13","x":20,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a12","l":"12","x":26,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"a11","l":"11","x":32,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"}]},"Ouzo":{"meta":{"total":47,"inside":3,"outside":44,"seats":160,"color":"#7a1a3a"},"sections":[{"id":"indoor","label":"Indoor / Bar","x":0,"y":0,"w":100,"h":32,"color":"rgba(100,40,80,0.12)"},{"id":"outdoor","label":"Outdoor","x":0,"y":32,"w":100,"h":68,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id":"uz103","l":"103","x":10,"y":10,"w":9,"h":14,"s":"r","cap":4,"sec":"indoor"},{"id":"uz102","l":"102","x":23,"y":10,"w":9,"h":14,"s":"r","cap":4,"sec":"indoor"},{"id":"uz101","l":"101","x":36,"y":10,"w":9,"h":14,"s":"r","cap":4,"sec":"indoor"},{"id":"uz11","l":"11","x":83,"y":35,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz12","l":"12","x":83,"y":47,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz13","l":"13","x":83,"y":58,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz14","l":"14","x":83,"y":66,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz15","l":"15","x":83,"y":74,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz16","l":"16","x":83,"y":82,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz21","l":"21","x":75,"y":35,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz22","l":"22","x":75,"y":43,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz23","l":"23","x":75,"y":58,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz24","l":"24","x":75,"y":66,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz25","l":"25","x":75,"y":74,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz26","l":"26","x":75,"y":82,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz27","l":"27","x":75,"y":90,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz31","l":"31","x":65,"y":35,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz32","l":"32","x":65,"y":43,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz33","l":"33","x":65,"y":57,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz34","l":"34","x":65,"y":65,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz35","l":"35","x":65,"y":73,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz36","l":"36","x":65,"y":81,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz37","l":"37","x":65,"y":89,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz41","l":"41","x":54,"y":35,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz42","l":"42","x":54,"y":45,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz43","l":"43","x":54,"y":58,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz44","l":"44","x":54,"y":68,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz45","l":"45","x":54,"y":78,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz46","l":"46","x":54,"y":89,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz51","l":"51","x":44,"y":35,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz52","l":"52","x":44,"y":45,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz53","l":"53","x":44,"y":58,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz54","l":"54","x":44,"y":68,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz55","l":"55","x":44,"y":78,"w":9,"h":9,"s":"c","cap":8,"sec":"outdoor"},{"id":"uz61","l":"61","x":33,"y":33,"w":8,"h":10,"s":"r","cap":6,"sec":"outdoor"},{"id":"uz62","l":"62","x":33,"y":47,"w":8,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz63","l":"63","x":33,"y":58,"w":8,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz64","l":"64","x":33,"y":68,"w":8,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz65","l":"65","x":33,"y":80,"w":8,"h":10,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz71","l":"71","x":23,"y":33,"w":7,"h":10,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz72","l":"72","x":23,"y":47,"w":7,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz73","l":"73","x":23,"y":58,"w":7,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz74","l":"74","x":23,"y":68,"w":7,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz75","l":"75","x":23,"y":80,"w":7,"h":10,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz81","l":"81","x":14,"y":35,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz82","l":"82","x":14,"y":46,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz83","l":"83","x":14,"y":57,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz84","l":"84","x":14,"y":68,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz85","l":"85","x":14,"y":79,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz86","l":"86","x":14,"y":89,"w":7,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz87","l":"87","x":14,"y":97,"w":7,"h":6,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz91","l":"91","x":4,"y":35,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz92","l":"92","x":4,"y":43,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz93","l":"93","x":4,"y":51,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz94","l":"94","x":4,"y":59,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz95","l":"95","x":4,"y":67,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"uz96","l":"96","x":4,"y":79,"w":7,"h":9,"s":"r","cap":4,"sec":"outdoor"},{"id":"uz97","l":"97","x":4,"y":91,"w":5,"h":6,"s":"r","cap":2,"sec":"outdoor"}]},"Provence":{"meta":{"total":52,"inside":4,"outside":48,"seats":138,"color":"#5a1a7a"},"sections":[{"id":"outdoor","label":"Outdoor","x":0,"y":0,"w":100,"h":100,"color":"rgba(20,100,60,0.1)"}],"tables":[{"id":"p91","l":"91","x":4,"y":28,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p93","l":"93","x":4,"y":44,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p94","l":"94","x":4,"y":58,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p81","l":"81","x":13,"y":28,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p82","l":"82","x":13,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p83","l":"83","x":13,"y":50,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p84","l":"84","x":13,"y":62,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p91b","l":"91","x":4,"y":18,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p71","l":"71","x":23,"y":28,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p72","l":"72","x":23,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p73","l":"73","x":23,"y":50,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p74","l":"74","x":23,"y":62,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p71b","l":"71","x":23,"y":18,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p61","l":"61","x":34,"y":28,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p62","l":"62","x":34,"y":38,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p63","l":"63","x":34,"y":50,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p64","l":"64","x":34,"y":62,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"p51","l":"51","x":48,"y":28,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p52","l":"52","x":48,"y":37,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p53","l":"53","x":48,"y":52,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p54","l":"54","x":48,"y":62,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p55","l":"55","x":48,"y":70,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p41","l":"41","x":57,"y":28,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p42","l":"42","x":57,"y":37,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p43","l":"43","x":57,"y":52,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p44","l":"44","x":57,"y":62,"w":5.5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p45","l":"45","x":59,"y":74,"w":9,"h":9,"s":"r","cap":6,"sec":"outdoor"},{"id":"p31","l":"31","x":72,"y":28,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p32","l":"32","x":72,"y":38,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p33","l":"33","x":72,"y":48,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p34","l":"34","x":72,"y":58,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p35","l":"35","x":72,"y":68,"w":5,"h":7,"s":"r","cap":4,"sec":"outdoor"},{"id":"p21","l":"21","x":80,"y":28,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p22","l":"22","x":80,"y":38,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p23","l":"23","x":80,"y":48,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p12","l":"12","x":88,"y":28,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p13","l":"13","x":88,"y":38,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p14","l":"14","x":88,"y":48,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p15","l":"15","x":88,"y":58,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p16","l":"16","x":88,"y":68,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p11","l":"11","x":88,"y":78,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p81t","l":"81","x":13,"y":18,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p31t","l":"31","x":70,"y":18,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p32t","l":"32","x":78,"y":18,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p21t","l":"21","x":86,"y":18,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"},{"id":"p22t","l":"22","x":93,"y":18,"w":5,"h":7,"s":"r","cap":2,"sec":"outdoor"}]},"Seasons":{"meta":{"total":39,"inside":3,"outside":35,"seats":133,"color":"#7a6a1a"},"sections":[{"id":"indoor","label":"Indoor","x":50,"y":0,"w":50,"h":70,"color":"rgba(30,70,130,0.12)"},{"id":"outdoor","label":"Outdoor","x":0,"y":0,"w":50,"h":100,"color":"rgba(20,100,60,0.12)"},{"id":"outdoor2","label":"Outdoor","x":50,"y":70,"w":50,"h":30,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id":"s11","l":"11","x":55,"y":4,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s12","l":"12","x":65,"y":4,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s13","l":"13","x":75,"y":4,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s14","l":"14","x":85,"y":4,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s21","l":"21","x":53,"y":18,"w":9,"h":11,"s":"c","cap":6,"sec":"indoor"},{"id":"s22","l":"22","x":65,"y":18,"w":7,"h":9,"s":"r","cap":4,"sec":"indoor"},{"id":"s23","l":"23","x":75,"y":18,"w":7,"h":9,"s":"r","cap":4,"sec":"indoor"},{"id":"s24","l":"24","x":85,"y":18,"w":7,"h":9,"s":"r","cap":4,"sec":"indoor"},{"id":"s31","l":"31","x":55,"y":32,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s32","l":"32","x":65,"y":32,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s33","l":"33","x":75,"y":32,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s34","l":"34","x":85,"y":32,"w":9,"h":10,"s":"c","cap":8,"sec":"indoor"},{"id":"s41","l":"41","x":55,"y":44,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s42","l":"42","x":65,"y":44,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s43","l":"43","x":75,"y":44,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s44","l":"44","x":85,"y":44,"w":9,"h":10,"s":"c","cap":6,"sec":"indoor"},{"id":"s51","l":"51","x":55,"y":57,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s52","l":"52","x":65,"y":57,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s53","l":"53","x":75,"y":57,"w":7,"h":8,"s":"r","cap":4,"sec":"indoor"},{"id":"s54","l":"54","x":85,"y":57,"w":9,"h":10,"s":"c","cap":8,"sec":"indoor"},{"id":"s101","l":"101","x":27,"y":22,"w":9,"h":11,"s":"c","cap":8,"sec":"outdoor"},{"id":"s102","l":"102","x":27,"y":36,"w":9,"h":11,"s":"c","cap":8,"sec":"outdoor"},{"id":"s103","l":"103","x":27,"y":50,"w":9,"h":11,"s":"c","cap":8,"sec":"outdoor"},{"id":"s61","l":"61","x":6,"y":62,"w":9,"h":11,"s":"c","cap":8,"sec":"outdoor"},{"id":"s62","l":"62","x":14,"y":70,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s63","l":"63","x":21,"y":70,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s64","l":"64","x":28,"y":70,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s65","l":"65","x":35,"y":70,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s66","l":"66","x":42,"y":70,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s67","l":"67","x":42,"y":78,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s68","l":"68","x":42,"y":86,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s71","l":"71","x":5,"y":84,"w":7,"h":8,"s":"r","cap":4,"sec":"outdoor"},{"id":"s72","l":"72","x":14,"y":84,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s73","l":"73","x":20,"y":84,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s74","l":"74","x":26,"y":84,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s75","l":"75","x":32,"y":84,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s76","l":"76","x":38,"y":84,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"},{"id":"s77","l":"77","x":44,"y":84,"w":4,"h":6,"s":"r","cap":2,"sec":"outdoor"}]},"DOB":{"meta":{"total":10,"inside":0,"outside":10,"seats":50,"color":"#1a4a7a"},"sections":[{"id":"beach","label":"Beach","x":0,"y":40,"w":100,"h":60,"color":"rgba(200,150,80,0.15)"},{"id":"sea","label":"Sea","x":0,"y":0,"w":100,"h":40,"color":"rgba(10,40,100,0.3)"}],"tables":[{"id":"d201","l":"201","x":7,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d202","l":"202","x":17,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d203","l":"203","x":27,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d204","l":"204","x":37,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d205","l":"205","x":47,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d206","l":"206","x":57,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d207","l":"207","x":67,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d208","l":"208","x":77,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d209","l":"209","x":84,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"},{"id":"d210","l":"210","x":91,"y":57,"w":7,"h":10,"s":"r","cap":4,"sec":"beach"}]},"Flavors":{"meta":{"total":130,"inside":53,"outside":79,"seats":388,"color":"#7a3a1a"},"sections":[{"id":"s1","label":"Zone 1","x":34,"y":0,"w":33,"h":53,"color":"rgba(30,70,130,0.12)"},{"id":"s2","label":"Zone 2","x":0,"y":53,"w":33,"h":47,"color":"rgba(20,100,60,0.12)"},{"id":"s3","label":"Zone 3","x":34,"y":53,"w":33,"h":47,"color":"rgba(100,60,20,0.12)"},{"id":"s4","label":"Zone 4","x":67,"y":53,"w":33,"h":47,"color":"rgba(60,20,100,0.12)"},{"id":"s5","label":"Zone 5","x":0,"y":0,"w":34,"h":53,"color":"rgba(20,80,100,0.12)"},{"id":"s6","label":"Zone 6","x":67,"y":0,"w":33,"h":53,"color":"rgba(100,20,60,0.12)"}],"tables":[{"id":"f31","l":"31","x":40,"y":10,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f32","l":"32","x":40,"y":22,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f21","l":"21","x":48,"y":10,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f22","l":"22","x":48,"y":18,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f23","l":"23","x":48,"y":26,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f24","l":"24","x":48,"y":34,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f11","l":"11","x":56,"y":10,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f12","l":"12","x":56,"y":18,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f13","l":"13","x":56,"y":26,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f14","l":"14","x":56,"y":34,"w":5,"h":7,"s":"r","cap":4,"sec":"s1"},{"id":"f61","l":"61","x":4,"y":8,"w":8,"h":10,"s":"r","cap":6,"sec":"s5"},{"id":"f51","l":"51","x":4,"y":26,"w":8,"h":10,"s":"r","cap":6,"sec":"s5"},{"id":"f41","l":"41","x":4,"y":42,"w":8,"h":10,"s":"r","cap":6,"sec":"s5"},{"id":"f52","l":"52","x":16,"y":26,"w":8,"h":10,"s":"r","cap":6,"sec":"s5"},{"id":"f53","l":"53","x":26,"y":26,"w":5,"h":7,"s":"r","cap":4,"sec":"s5"},{"id":"f42","l":"42","x":16,"y":42,"w":5,"h":7,"s":"r","cap":4,"sec":"s5"},{"id":"f43","l":"43","x":16,"y":52,"w":5,"h":7,"s":"r","cap":4,"sec":"s5"},{"id":"f76","l":"76","x":4,"y":8,"w":5,"h":7,"s":"r","cap":4,"sec":"s5"},{"id":"f77","l":"77","x":15,"y":8,"w":6,"h":7,"s":"r","cap":4,"sec":"s5"},{"id":"f31b","l":"31","x":72,"y":18,"w":5,"h":7,"s":"r","cap":4,"sec":"s6"},{"id":"f32b","l":"32","x":72,"y":28,"w":5,"h":7,"s":"r","cap":4,"sec":"s6"},{"id":"f33","l":"33","x":72,"y":38,"w":5,"h":7,"s":"r","cap":4,"sec":"s6"},{"id":"f21b","l":"21","x":80,"y":18,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f22b","l":"22","x":80,"y":28,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f23b","l":"23","x":80,"y":38,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f11b","l":"11","x":88,"y":10,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f12b","l":"12","x":88,"y":18,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f13b","l":"13","x":88,"y":28,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f14b","l":"14","x":88,"y":38,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f15","l":"15","x":88,"y":48,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f16","l":"16","x":88,"y":56,"w":4,"h":6,"s":"r","cap":2,"sec":"s6"},{"id":"f241","l":"41","x":4,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f242","l":"42","x":4,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f243","l":"43","x":4,"y":78,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f231","l":"31","x":12,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f232","l":"32","x":12,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f233","l":"33","x":12,"y":78,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f221","l":"21","x":20,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f222","l":"22","x":20,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f223","l":"23","x":20,"y":78,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f211","l":"11","x":28,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f212","l":"12","x":28,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f213","l":"13","x":28,"y":78,"w":5,"h":7,"s":"r","cap":4,"sec":"s2"},{"id":"f341","l":"41","x":36,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f342","l":"42","x":36,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f343","l":"43","x":36,"y":78,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f331","l":"31","x":44,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f332","l":"32","x":44,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f333","l":"33","x":44,"y":78,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f324","l":"24","x":52,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f321","l":"21","x":52,"y":65,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f322","l":"22","x":52,"y":75,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f323","l":"23","x":52,"y":85,"w":5,"h":7,"s":"r","cap":4,"sec":"s3"},{"id":"f441","l":"41","x":69,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f442","l":"42","x":69,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f431","l":"31","x":77,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f432","l":"32","x":77,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f421","l":"21","x":85,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f422","l":"22","x":85,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f411","l":"11","x":93,"y":57,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"},{"id":"f412","l":"12","x":93,"y":67,"w":5,"h":7,"s":"r","cap":4,"sec":"s4"}]},"Kochylari":{"meta":{"total":22,"inside":0,"outside":22,"seats":66,"color":"#2a6a9a"},"sections":[{"id":"bar","label":"Bar","x":20,"y":0,"w":60,"h":22,"color":"rgba(100,50,150,0.15)"},{"id":"outdoor","label":"Outdoor","x":0,"y":22,"w":100,"h":78,"color":"rgba(20,80,120,0.12)"}],"tables":[{"id": "kc1", "l": "1", "x": 5, "y": 25, "w": 7, "h": 9, "s": "r", "cap": 4, "sec": "bar"}, {"id": "kc2", "l": "2", "x": 24, "y": 25, "w": 7, "h": 9, "s": "r", "cap": 2, "sec": "bar"}, {"id": "kc3", "l": "3", "x": 43, "y": 25, "w": 7, "h": 9, "s": "r", "cap": 4, "sec": "bar"}, {"id": "kc4", "l": "4", "x": 62, "y": 25, "w": 7, "h": 9, "s": "c", "cap": 2, "sec": "bar"}, {"id": "kc5", "l": "5", "x": 81, "y": 25, "w": 7, "h": 9, "s": "r", "cap": 4, "sec": "bar"}, {"id": "kc6", "l": "6", "x": 5, "y": 45, "w": 7, "h": 9, "s": "r", "cap": 2, "sec": "bar"}, {"id": "kc7", "l": "7", "x": 24, "y": 45, "w": 7, "h": 9, "s": "r", "cap": 4, "sec": "outdoor"}, {"id": "kc8", "l": "8", "x": 43, "y": 45, "w": 7, "h": 9, "s": "c", "cap": 2, "sec": "outdoor"}, {"id": "kc9", "l": "9", "x": 62, "y": 45, "w": 7, "h": 9, "s": "r", "cap": 4, "sec": "outdoor"}, {"id": "kc10", "l": "10", "x": 81, "y": 45, "w": 7, "h": 9, "s": "r", "cap": 2, "sec": "outdoor"}, {"id": "kc11", "l": "11", "x": 5, "y": 65, "w": 7, "h": 9, "s": "r", "cap": 4, "sec": "outdoor"}, {"id": "kc12", "l": "12", "x": 24, "y": 65, "w": 7, "h": 9, "s": "c", "cap": 2, "sec": "outdoor"}, {"id": "kc13", "l": "13", "x": 43, "y": 65, "w": 7, "h": 9, "s": "r", "cap": 4, "sec": "outdoor"}, {"id": "kc14", "l": "14", "x": 62, "y": 65, "w": 7, "h": 9, "s": "r", "cap": 2, "sec": "outdoor"}, {"id": "kc15", "l": "15", "x": 81, "y": 65, "w": 7, "h": 9, "s": "r", "cap": 4, "sec": "outdoor"}, {"id": "kc16", "l": "16", "x": 5, "y": 85, "w": 7, "h": 9, "s": "c", "cap": 2, "sec": "outdoor"}, {"id": "kc17", "l": "17", "x": 24, "y": 85, "w": 7, "h": 9, "s": "r", "cap": 4, "sec": "outdoor"}, {"id": "kc18", "l": "18", "x": 43, "y": 85, "w": 7, "h": 9, "s": "r", "cap": 2, "sec": "outdoor"}, {"id": "kc19", "l": "19", "x": 62, "y": 85, "w": 7, "h": 9, "s": "r", "cap": 4, "sec": "outdoor"}, {"id": "kc20", "l": "20", "x": 81, "y": 85, "w": 7, "h": 9, "s": "c", "cap": 2, "sec": "outdoor"}, {"id": "kc21", "l": "21", "x": 5, "y": 105, "w": 7, "h": 9, "s": "r", "cap": 4, "sec": "outdoor"}, {"id": "kc22", "l": "22", "x": 24, "y": 105, "w": 7, "h": 9, "s": "r", "cap": 2, "sec": "outdoor"}]},"Mylotopi":{"meta":{"total":13,"inside":0,"outside":13,"seats":52,"color":"#2a9a6a"},"sections":[{"id":"pool","label":"Pool Area","x":10,"y":5,"w":80,"h":55,"color":"rgba(10,80,100,0.18)"},{"id":"outdoor","label":"Outdoor","x":0,"y":60,"w":100,"h":40,"color":"rgba(20,100,60,0.12)"}],"tables":[{"id": "ml1", "l": "1", "x": 8, "y": 15, "w": 8, "h": 10, "s": "r", "cap": 4, "sec": "pool"}, {"id": "ml2", "l": "2", "x": 31, "y": 15, "w": 8, "h": 10, "s": "r", "cap": 4, "sec": "pool"}, {"id": "ml3", "l": "3", "x": 54, "y": 15, "w": 8, "h": 10, "s": "r", "cap": 4, "sec": "pool"}, {"id": "ml4", "l": "4", "x": 77, "y": 15, "w": 8, "h": 10, "s": "r", "cap": 4, "sec": "pool"}, {"id": "ml5", "l": "5", "x": 8, "y": 40, "w": 8, "h": 10, "s": "c", "cap": 4, "sec": "pool"}, {"id": "ml6", "l": "6", "x": 31, "y": 40, "w": 8, "h": 10, "s": "r", "cap": 4, "sec": "pool"}, {"id": "ml7", "l": "7", "x": 54, "y": 40, "w": 8, "h": 10, "s": "r", "cap": 4, "sec": "pool"}, {"id": "ml8", "l": "8", "x": 77, "y": 40, "w": 8, "h": 10, "s": "r", "cap": 4, "sec": "pool"}, {"id": "ml9", "l": "9", "x": 8, "y": 65, "w": 8, "h": 10, "s": "r", "cap": 4, "sec": "outdoor"}, {"id": "ml10", "l": "10", "x": 31, "y": 65, "w": 8, "h": 10, "s": "c", "cap": 4, "sec": "outdoor"}, {"id": "ml11", "l": "11", "x": 54, "y": 65, "w": 8, "h": 10, "s": "r", "cap": 4, "sec": "outdoor"}, {"id": "ml12", "l": "12", "x": 77, "y": 65, "w": 8, "h": 10, "s": "r", "cap": 4, "sec": "outdoor"}, {"id": "ml13", "l": "13", "x": 8, "y": 90, "w": 8, "h": 10, "s": "r", "cap": 4, "sec": "outdoor"}]}};
 
-const VENUES = ["Fresco","Anaya","Flavors","Kos","Oliva","Ouzo","Provence","Seasons","DOB","Kochylari","Mylotopi","Dine Out"];
+const VENUES = ["Fresco","Anaya","Flavors","Kos","Oliva","Ouzo","Provence","Seasons","DOB","Kochylari","Mylotopi"];
 const FLOOR_VENUES = ["Fresco","Anaya","Flavors","Kos","Oliva","Ouzo","Provence","Seasons","DOB","Kochylari","Mylotopi"];
 
 // ─── State ───
@@ -1280,11 +1294,10 @@ function init(){
 // ─── Tabs ───
 function buildTabs(){
   document.getElementById('vtabs').innerHTML=VENUES.map(v=>{
-    const isDineOut=v==='Dine Out';
-    const cnt=isDineOut?0:reservations.filter(r=>r.venue===v&&r.mealPeriod===mealPeriod).length;
+    const cnt=reservations.filter(r=>r.venue===v&&r.mealPeriod===mealPeriod).length;
     const badge=cnt>0?`<span class="vbadge">${cnt}</span>`:'';
-    const hasCustom=!isDineOut&&customLayouts[v]?' has-custom':'';
-    return `<div class="vtab${v===venue?' active':''}${isDineOut?' dineout':''}${hasCustom}" onclick="loadVenue('${v}')">${v}${badge}</div>`;
+    const hasCustom=customLayouts[v]?' has-custom':'';
+    return `<div class="vtab${v===venue?' active':''}${hasCustom}" onclick="loadVenue('${v}')">${v}${badge}</div>`;
   }).join('');
 }
 
@@ -1299,7 +1312,6 @@ function loadVenue(v){
     editBtn.style.opacity=canEdit?'1':'0.35';
     editBtn.title=canEdit?'Edit Layout':'Layout edit: '+v+' Manager or F&B Manager only';
   }
-  if(v==='Dine Out'){renderDineOut();return;}
   renderMap(v);
   updateStats();
   renderRes();
@@ -1346,7 +1358,6 @@ function renderDineOut(){
 
 // ─── Floor Map ───
 function renderMap(v){
-  if(v==='Dine Out'){renderDineOut();return;}
   const fc=document.getElementById('fc');
   const map=document.getElementById('fmap');
   map.style.display='';
@@ -1552,7 +1563,6 @@ function buildFlags(res,prof){
 
 // ─── Reservation List ───
 function renderRes(){
-  if(venue==='Dine Out'){renderDineOut();return;}
   const list=document.getElementById('rlist');
   const vr=reservations.filter(r=>r.venue===venue&&r.mealPeriod===mealPeriod)
     .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
@@ -2149,7 +2159,6 @@ function cloneLayout(v){
 
 // ─── Enter/Exit Edit Mode ───
 function enterEditMode(){
-  if(venue==='Dine Out') return;
   if(!canEditVenue(venue)){
     toast(`🔒 Layout edit for ${venue} requires ${venue} Manager or F&B Manager access`,'err');
     return;
@@ -2328,8 +2337,7 @@ function editTableMD(e, tid){
   const layout=customLayouts[venue];
   const t=layout.tables.find(x=>x.id===tid);
   if(!t) return;
-  const fc=document.getElementById('fc');
-  const rect=fc.getBoundingClientRect();
+  const rect=document.getElementById('fmap').getBoundingClientRect();
 
   dragSt={
     type:'move-table', tid,
@@ -2358,8 +2366,7 @@ function editZoneMD(e, zid){
   const layout=customLayouts[venue];
   const sec=layout.sections.find(x=>x.id===zid);
   if(!sec) return;
-  const fc=document.getElementById('fc');
-  const rect=fc.getBoundingClientRect();
+  const rect=document.getElementById('fmap').getBoundingClientRect();
 
   dragSt={
     type:'move-zone', zid,
@@ -2376,8 +2383,7 @@ function resizeMD(e, elId, handle){
   e.stopPropagation();
   e.preventDefault();
   const layout=customLayouts[venue];
-  const fc=document.getElementById('fc');
-  const rect=fc.getBoundingClientRect();
+  const rect=document.getElementById('fmap').getBoundingClientRect();
 
   if(elId.startsWith('t_')){
     const tid=elId.slice(2);
@@ -2406,8 +2412,12 @@ function resizeMD(e, elId, handle){
 function onEditorMouseMove(e){
   if(!dragSt) return;
   const layout=customLayouts[venue];
-  const dx=((e.clientX-dragSt.startMx)/dragSt.cw)*100;
-  const dy=((e.clientY-dragSt.startMy)/dragSt.ch)*100;
+  // Recalculate from fmap rect each frame to avoid stale dimensions
+  const fmapRect=document.getElementById('fmap').getBoundingClientRect();
+  const cw=fmapRect.width||dragSt.cw||1000;
+  const ch=fmapRect.height||dragSt.ch||700;
+  const dx=((e.clientX-dragSt.startMx)/cw)*100;
+  const dy=((e.clientY-dragSt.startMy)/ch)*100;
 
   if(dragSt.type==='move-table'){
     const t=layout.tables.find(x=>x.id===dragSt.tid);
@@ -2915,8 +2925,8 @@ function completeLogin(roleId){
   document.getElementById('chipIcon').textContent=def.icon;
   document.getElementById('chipRole').textContent=def.label;
   document.getElementById('chipVenue').textContent='';
-  // Show PIN manager to master only
-  document.getElementById('pinMgrBtn').style.display=def.canManagePins?'':'none';
+  // Show PIN manager to all users
+  document.getElementById('pinMgrBtn').style.display='';
   // Run app
   startApp();
   toast('Welcome, '+def.label+' 👋','suc');
@@ -2946,47 +2956,168 @@ function canEditVenue(v){
 
 // ─── PIN Manager ───
 function openPinMgr(){
-  if(!currentUser?.canManagePins){toast('Master access only','err');return;}
-  const roles=[
-    {id:'master',label:'👑 F&B Manager (Master)',venues:'All venues'},
-    {id:'hostess',label:'🌸 Hostess',venues:'All venues — no layout edit'},
-    {id:'fresco_mgr',label:'🍽 Fresco Manager',venues:'Fresco layout'},
-    {id:'anaya_mgr',label:'🍽 Anaya Manager',venues:'Anaya layout'},
-    {id:'flavors_mgr',label:'🍽 Flavors Manager',venues:'Flavors layout'},
-    {id:'kos_mgr',label:'🍽 Kos Manager',venues:'Kos layout'},
-    {id:'oliva_mgr',label:'🍽 Oliva Manager',venues:'Oliva layout'},
-    {id:'ouzo_mgr',label:'🍽 Ouzo Manager',venues:'Ouzo layout'},
-    {id:'provence_mgr',label:'🍽 Provence Manager',venues:'Provence layout'},
-    {id:'seasons_mgr',label:'🍽 Seasons Manager',venues:'Seasons layout'},
-    {id:'dob_mgr',label:'🍽 DOB Manager',venues:'DOB layout'},
+  if(!currentUser){toast('Please log in first','err');return;}
+  const isMaster=currentUser.canManagePins;
+  const ALL_ROLES=[
+    {id:'master',      label:'👑 F&B Manager (Master)', venues:'All venues — full access'},
+    {id:'hostess',     label:'🌸 Hostess',              venues:'All venues — no layout edit'},
+    {id:'fresco_mgr',  label:'🍽 Fresco Manager',       venues:'Fresco layout edit'},
+    {id:'anaya_mgr',   label:'🍽 Anaya Manager',        venues:'Anaya layout edit'},
+    {id:'flavors_mgr', label:'🍽 Flavors Manager',      venues:'Flavors layout edit'},
+    {id:'kos_mgr',     label:'🍽 Kos Manager',          venues:'Kos layout edit'},
+    {id:'oliva_mgr',   label:'🍽 Oliva Manager',        venues:'Oliva layout edit'},
+    {id:'ouzo_mgr',    label:'🍽 Ouzo Manager',         venues:'Ouzo layout edit'},
+    {id:'provence_mgr',label:'🍽 Provence Manager',     venues:'Provence layout edit'},
+    {id:'seasons_mgr', label:'🍽 Seasons Manager',      venues:'Seasons layout edit'},
+    {id:'dob_mgr',     label:'🍽 DOB Manager',          venues:'DOB layout edit'},
+    {id:'kochylari_mgr',label:'🍽 Kochylari Manager',  venues:'Kochylari layout edit'},
+    {id:'mylotopi_mgr',label:'🍽 Mylotopi Manager',     venues:'Mylotopi layout edit'},
   ];
-  const list=document.getElementById('pinMgrList');
-  list.innerHTML=roles.map(r=>`
+  const visible=isMaster ? ALL_ROLES : ALL_ROLES.filter(r=>r.id===currentUser.roleId);
+  document.getElementById('pinMgrDesc').textContent=isMaster
+    ? 'F&B Manager: view and change all PINs.'
+    : 'Change your own PIN (min 4 digits).';
+  document.getElementById('pinMgrList').innerHTML=visible.map(r=>`
     <div class="pmr">
       <div class="pmr-left">
         <div class="pmr-role">${r.label}</div>
         <div class="pmr-venues">${r.venues}</div>
       </div>
-      <input class="pmr-input" type="password" maxlength="6" id="pin_${r.id}"
+      <input class="pmr-input" type="password" maxlength="8" id="pin_${r.id}"
         value="${activePins[r.id]||DEFAULT_PINS[r.id]||''}"
-        placeholder="••••" autocomplete="off">
+        placeholder="••••" autocomplete="off" inputmode="numeric">
     </div>`).join('');
   openM('pinMgrMo');
 }
 
 function savePins(){
-  const roles=Object.keys(DEFAULT_PINS);
-  roles.forEach(r=>{
+  const isMaster=currentUser?.canManagePins;
+  const rolesToSave=isMaster ? Object.keys(DEFAULT_PINS) : [currentUser?.roleId].filter(Boolean);
+  rolesToSave.forEach(r=>{
     const el=document.getElementById('pin_'+r);
     if(el&&el.value.trim().length>=4) activePins[r]=el.value.trim();
   });
   localStorage.setItem('ih6_pins',JSON.stringify(activePins));
-  toast('PINs saved securely ✓','suc');
+  toast('✓ PIN saved successfully','suc');
   closeM('pinMgrMo');
 }
 
 // ══════════════════════════════════════════════════════════
-// 🔥 FIREBASE REALTIME SYNC
+// 📅 END-OF-DAY RESET + HISTORY DATABASE
+// ══════════════════════════════════════════════════════════
+
+const HISTORY_KEY='ih8_history'; // localStorage key for local history
+
+// Check if a new day has started since last reset
+function checkDayRollover(){
+  const today=new Date().toISOString().slice(0,10);
+  const lastDay=localStorage.getItem('ih8_last_day');
+  if(lastDay && lastDay !== today){
+    // New day detected — auto-archive yesterday
+    archiveDay(lastDay, false); // silent auto-archive
+    toast(`🌅 New day — yesterday (${lastDay}) archived to history`,'info');
+  }
+  localStorage.setItem('ih8_last_day', today);
+}
+
+// Archive current day's data to history
+function archiveDay(dateStr, manual=true){
+  if(!reservations.length && !Object.keys(tStates).length) return;
+  const snapshot={
+    date: dateStr || new Date().toISOString().slice(0,10),
+    archivedAt: new Date().toISOString(),
+    reservations: JSON.parse(JSON.stringify(reservations)),
+    tStates: JSON.parse(JSON.stringify(tStates)),
+    summary:{
+      totalReservations: reservations.length,
+      totalPax: reservations.reduce((s,r)=>s+(parseInt(r.adults||r.pax)||0),0),
+      byVenue: {}
+    }
+  };
+  // Build venue summary
+  VENUES.forEach(v=>{
+    const vRes=reservations.filter(r=>r.venue===v);
+    if(vRes.length) snapshot.summary.byVenue[v]={
+      reservations:vRes.length,
+      pax:vRes.reduce((s,r)=>s+(parseInt(r.adults||r.pax)||0),0)
+    };
+  });
+
+  // Save to localStorage history
+  try{
+    const history=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');
+    // Remove existing entry for same date
+    const filtered=history.filter(h=>h.date!==snapshot.date);
+    filtered.unshift(snapshot); // newest first
+    // Keep last 90 days
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(filtered.slice(0,90)));
+  }catch(e){}
+
+  // Save to Firebase history (permanent)
+  if(syncEnabled&&firebaseDB){
+    try{
+      firebaseDB.ref('history/'+snapshot.date).set(snapshot);
+    }catch(e){}
+  }
+
+  if(manual) toast(`✓ Day ${snapshot.date} archived to history`,'suc');
+}
+
+// End of day reset — clears floor + reservations, keeps profiles & layouts
+function endOfDayReset(){
+  if(!confirm(`🌙 End of Day Reset\n\nThis will:\n✓ Archive today's reservations to history\n✓ Clear all table statuses\n✓ Clear today's reservations\n✓ Keep guest profiles & floor layouts\n\nContinue?`)) return;
+
+  // Archive first
+  archiveDay(new Date().toISOString().slice(0,10), true);
+
+  // Clear operational data
+  tStates={};
+  reservations=[];
+
+  save();
+  renderMap(venue);
+  renderRes();
+  buildTabs();
+  updateStats();
+  updateAlertStrip();
+  toast('✓ End of day complete — floor cleared, data archived','suc');
+}
+
+// Show history modal
+function openHistory(){
+  const history=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');
+  if(!history.length){
+    toast('No history yet — archived days will appear here','info');
+    return;
+  }
+  const content=history.slice(0,30).map(h=>{
+    const byV=Object.entries(h.summary?.byVenue||{})
+      .map(([v,d])=>`${v}: ${d.reservations}res/${d.pax}pax`).join(' · ');
+    return `<div style="padding:9px 12px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .15s"
+      onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"
+      onclick="showHistoryDay('${h.date}')">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:600;color:var(--text2)">${h.date}</span>
+        <span style="font-size:10px;color:var(--muted)">${h.summary?.totalReservations||0} res · ${h.summary?.totalPax||0} pax</span>
+      </div>
+      <div style="font-size:9px;color:var(--muted);margin-top:2px">${byV||'—'}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('historyContent').innerHTML=content||'<div style="padding:20px;text-align:center;color:var(--muted)">No history</div>';
+  openM('historyMo');
+}
+
+function showHistoryDay(date){
+  const history=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');
+  const day=history.find(h=>h.date===date);
+  if(!day) return;
+  alert(`History: ${date}\n\nTotal Reservations: ${day.summary?.totalReservations||0}\nTotal Pax: ${day.summary?.totalPax||0}\n\nBy Venue:\n${
+    Object.entries(day.summary?.byVenue||{}).map(([v,d])=>`  ${v}: ${d.reservations} reservations, ${d.pax} pax`).join('\n')
+  }`);
+}
+
+
 // ══════════════════════════════════════════════════════════
 
 /*
@@ -3105,6 +3236,7 @@ function syncToFirebase(){
 
 function startApp(){
   load();
+  checkDayRollover(); // auto-archive if new day
   document.getElementById('nd').textContent=new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
   buildTabs();
   loadVenue('Fresco');
