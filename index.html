@@ -758,6 +758,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--bf);background:var(--bg)
 <!-- Firebase SDK for real-time multi-device sync -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -3153,12 +3154,23 @@ function initFirebase(){
     }
     const app=firebase.initializeApp(FIREBASE_CONFIG);
     firebaseDB=firebase.database(app);
+    // Anonymous sign-in: every device gets a token so the database rules can
+    // require auth and block anonymous bots. Login/PINs are unaffected (client-side).
+    window.fbAuthReady = new Promise(function(resolve){
+      var done=false, finish=function(){ if(!done){ done=true; resolve(true); } };
+      firebase.auth().onAuthStateChanged(function(u){ if(u) finish(); });
+      firebase.auth().signInAnonymously().catch(function(err){
+        console.warn('Anonymous auth failed — enable it in Firebase Console → Authentication → Sign-in method → Anonymous:', err);
+        finish(); // still resolve so the app keeps working while rules are open
+      });
+      setTimeout(finish, 4000); // safety net, never hang the app
+    });
     // Test connection
     firebaseDB.ref('.info/connected').on('value',snap=>{
       if(snap.val()===true){
         syncEnabled=true;
         setSyncStatus('live','Live sync');
-        startFirebaseListeners();
+        (window.fbAuthReady||Promise.resolve()).then(startFirebaseListeners);
       } else {
         syncEnabled=false;
         setSyncStatus('offline','Reconnecting...');
@@ -3216,6 +3228,7 @@ function syncToFirebase(){
   setSyncStatus('syncing','Syncing...');
   syncThrottle=setTimeout(async()=>{
     try{
+      await (window.fbAuthReady||Promise.resolve());
       isWriting=true;
       await firebaseDB.ref('tStates').set(tStates);
       await firebaseDB.ref('reservations').set(reservations);
